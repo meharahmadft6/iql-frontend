@@ -100,7 +100,7 @@ export default function HeroSection() {
             Find the Perfect Tutor for You
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
-            Connect with expert educators in any subject, anywhere, anytime
+            Connect with expert educators in any subject, anywhere.
           </p>
         </div>
 
