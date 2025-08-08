@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import Image from "next/image";
-import { API_BASE_URL } from "../../utils/api";
+import { baseURL } from "../../api/api";
 export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -41,7 +41,7 @@ export default function LoginPage() {
         },
       });
 
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${baseURL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

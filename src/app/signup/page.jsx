@@ -13,7 +13,7 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import Image from "next/image";
-import { API_BASE_URL } from "../../utils/api";
+import { baseURL } from "../../api/api";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -47,7 +47,7 @@ export default function SignupPage() {
         },
       });
 
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await fetch(`${baseURL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
