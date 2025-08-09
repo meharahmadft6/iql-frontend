@@ -5,14 +5,19 @@ import { useState } from "react";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const toggleDropdown = (dropdownName) => {
+    setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
   return (
-    <nav className="w-full bg-[#f5f7f9]  font-poppins">
-      <div className=" mx-auto bg-white  shadow-sm px-6 py-4 flex items-center justify-between">
+    <nav className="w-full bg-[#f5f7f9] font-poppins">
+      <div className="mx-auto bg-white shadow-sm px-6 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2 z-50 md:ms-10">
           <Image
@@ -29,19 +34,73 @@ export default function Navbar() {
           <div className="flex items-center space-x-10">
             {[
               { name: "Home", href: "/" },
-              { name: "About Us", href: "/about" },
-              { name: "Services", href: "/services" },
-              { name: "Contact Us", href: "/contact" },
-              { name: "Portfolio", href: "/portfolio" },
+              { name: "Our Story", href: "/ourstory" },
+              { 
+                name: "Find Tutors", 
+                dropdown: [
+                  { name: "All Tutors", href: "/tutors/all" },
+                  { name: "Online Tutors", href: "/tutors/online" },
+                  { name: "Home Tutors", href: "/tutors/home" }
+                ]
+              },
+              { 
+                name: "Find Tutor Jobs", 
+                dropdown: [
+                  { name: "All Tutor Jobs", href: "/jobs/all" },
+                  { name: "Online Tutor Jobs", href: "/jobs/online" },
+                  { name: "Home Tutor Jobs", href: "/jobs/home" }
+                ]
+              },
+              { name: "Research", href: "/research" },
+              { name: "Contact Us", href: "/contactus" },
             ].map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="relative text-[15px] font-medium text-gray-900 transition-all duration-500 group"
-              >
-                <span className="relative z-10 block py-2">{item.name}</span>
-                <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-blue-600 transition-all duration-500 group-hover:w-full"></span>
-              </Link>
+              <div key={item.name} className="relative group">
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="relative text-[15px] font-medium text-gray-900 transition-all duration-500 group"
+                  >
+                    <span className="relative z-10 block py-2">{item.name}</span>
+                    <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-blue-600 transition-all duration-500 group-hover:w-full"></span>
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => toggleDropdown(item.name)}
+                      className="relative text-[15px] font-medium text-gray-900 transition-all duration-500 group flex items-center"
+                    >
+                      <span className="relative z-10 block py-2">{item.name}</span>
+                      <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-blue-600 transition-all duration-500 group-hover:w-full"></span>
+                      <svg
+                        className="ml-1 h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                    {openDropdown === item.name && (
+                      <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+                        {item.dropdown?.map((subItem) => (
+                          <Link
+                            key={subItem.name}
+                            href={subItem.href}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                          >
+                            {subItem.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             ))}
           </div>
 
@@ -64,9 +123,6 @@ export default function Navbar() {
 
         {/* Mobile Navigation */}
         <div className="md:hidden flex items-center space-x-4">
-          {/* Mobile Auth Buttons (visible on small screens) */}
-
-          {/* Mobile Menu Button */}
           <button
             onClick={toggleMobileMenu}
             className="text-gray-700 p-2 rounded-md hover:bg-gray-100 transition-colors"
@@ -124,19 +180,76 @@ export default function Navbar() {
           <div className="flex flex-col px-4 py-6 space-y-4">
             {[
               { name: "Home", href: "/" },
-              { name: "About Us", href: "/about" },
+              { name: "Our Story", href: "/ourstory" },
               { name: "Services", href: "/services" },
-              { name: "Contact Us", href: "/contact" },
-              { name: "Portfolio", href: "/portfolio" },
+              { 
+                name: "Find Tutors", 
+                dropdown: [
+                  { name: "All Tutors", href: "/tutors/all" },
+                  { name: "Online Tutors", href: "/tutors/online" },
+                  { name: "Home Tutors", href: "/tutors/home" }
+                ]
+              },
+              { 
+                name: "Find Tutor Jobs", 
+                dropdown: [
+                  { name: "All Tutor Jobs", href: "/jobs/all" },
+                  { name: "Online Tutor Jobs", href: "/jobs/online" },
+                  { name: "Home Tutor Jobs", href: "/jobs/home" }
+                ]
+              },
+              { name: "Research", href: "/research" },
+              { name: "Contact Us", href: "/contactus" },
             ].map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-gray-800 text-base font-medium border-b pb-2 border-gray-200 hover:text-blue-600 transition"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
+              <div key={item.name}>
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="text-gray-800 text-base font-medium border-b pb-2 border-gray-200 hover:text-blue-600 transition block"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ) : (
+                  <div className="border-b border-gray-200 pb-2">
+                    <button
+                      onClick={() => toggleDropdown(item.name)}
+                      className="text-gray-800 text-base font-medium hover:text-blue-600 transition flex items-center justify-between w-full"
+                    >
+                      {item.name}
+                      <svg
+                        className={`h-4 w-4 transform transition-transform ${
+                          openDropdown === item.name ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                    {openDropdown === item.name && (
+                      <div className="pl-4 mt-2 space-y-2">
+                        {item.dropdown?.map((subItem) => (
+                          <Link
+                            key={subItem.name}
+                            href={subItem.href}
+                            className="block text-sm text-gray-700 hover:text-blue-600"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            {subItem.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
 
             <div className="flex flex-col space-y-3 pt-4 border-t border-gray-200">
