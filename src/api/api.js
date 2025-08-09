@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const baseURL = `https://iql-env.eba-mbt8mk3z.ap-south-1.elasticbeanstalk.com`;
+export const baseURL = `http://iql-env.eba-mbt8mk3z.ap-south-1.elasticbeanstalk.com/api`;
 // export const baseURL = `http://localhost:5000/api`;
 
 export const API = axios.create({
