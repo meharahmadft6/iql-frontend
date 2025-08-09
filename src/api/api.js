@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const baseURL = `https://43.205.214.209/api/`;
+export const baseURL = "https://api.infinityquotientlearning.com";
 // export const baseURL = `http://localhost:5000/api`;
 
 export const API = axios.create({
