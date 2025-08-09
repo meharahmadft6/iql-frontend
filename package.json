@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "framer-motion": "^12.23.12",
-    "git": "^0.1.5"
+    "git": "^0.1.5",
     "@headlessui/react": "^2.2.7",
     "axios": "^1.11.0",
     "lucide-react": "^0.537.0",
