@@ -31,10 +31,13 @@ const StatsSection = () => {
   return (
     <section id="stats-section" className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 text-center mb-12">
-          <span className="text-indigo-600">Top-Quality</span> Educators
+        <h2 className="text-3xl md:text-5xl font-bold text-gray-800  text-center mb-12">
+          <span className="bg-gradient-to-r from-blue-900 via-sky-400 to-green-500 bg-clip-text text-transparent">
+            Top-Quality
+          </span>{" "}
+          Educators
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {stats.map((stat, index) => (
             <motion.div
@@ -45,9 +48,14 @@ const StatsSection = () => {
               viewport={{ once: true }}
               className="text-center p-6 rounded-xl bg-gray-50 hover:bg-indigo-50 transition-colors duration-300"
             >
-              <div className="text-4xl md:text-5xl font-bold text-indigo-600 mb-2">
+              <div className="text-4xl md:text-5xl font-bold text-black mb-2">
                 {counted ? (
-                  <CountUp end={stat.number} suffix={stat.suffix} duration={2} delay={index * 0.3} />
+                  <CountUp
+                    end={stat.number}
+                    suffix={stat.suffix}
+                    duration={2}
+                    delay={index * 0.3}
+                  />
                 ) : (
                   <span>0{stat.suffix}</span>
                 )}

@@ -1,5 +1,5 @@
-import React from 'react';
-import Image from 'next/image';
+import React from "react";
+import Image from "next/image";
 
 const TrustedBySection = () => {
   const partners = [
@@ -14,16 +14,21 @@ const TrustedBySection = () => {
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 text-center mb-12">
-          <span className="text-indigo-600">Trusted</span> By
+          <span className="bg-gradient-to-r from-blue-900 via-sky-400 to-green-500 bg-clip-text text-transparent">
+            Trusted
+          </span>{" "}
+          By
         </h2>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 md:gap-10">
           {partners.map((partner, index) => (
-            <div 
+            <div
               key={index}
               className="flex items-center justify-center p-6 bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-indigo-100"
             >
-              <div className="relative w-full h-20"> {/* Increased container size */}
+              <div className="relative w-full h-20">
+                {" "}
+                {/* Increased container size */}
                 <Image
                   src={partner.logo}
                   alt={partner.name}
