@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -11,6 +11,7 @@ import {
 import Swal from "sweetalert2";
 import Image from "next/image";
 import { baseURL } from "../../api/api";
+
 export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -19,12 +20,40 @@ export default function LoginPage() {
   });
   const [loading, setLoading] = useState(false);
 
+  // Check if user is already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // If token exists, redirect based on role
+      const userData = JSON.parse(localStorage.getItem("userData"));
+      if (userData) {
+        redirectBasedOnRole(userData.role);
+      }
+    }
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  const redirectBasedOnRole = (role) => {
+    switch (role) {
+      case "admin":
+        router.push("/dashboard");
+        break;
+      case "teacher":
+        router.push("/teachers");
+        break;
+      case "student":
+        router.push("/students");
+        break;
+      default:
+        router.push("/");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -48,15 +77,24 @@ export default function LoginPage() {
         },
         body: JSON.stringify(formData),
       });
-      console.log("Api response", response);
+
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
 
-      // ✅ Save token to localStorage
+      // Save token and user data to localStorage
       localStorage.setItem("token", data.token);
+      localStorage.setItem(
+        "userData",
+        JSON.stringify({
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+        })
+      );
 
       Swal.fire({
         icon: "success",
@@ -66,17 +104,15 @@ export default function LoginPage() {
         timer: 1500,
       });
 
-      // Redirect after success
+      // Redirect based on role after success
       setTimeout(() => {
-        router.push(
-          data.role === "teacher" ? "/teacher-dashboard" : "/dashboard"
-        );
+        redirectBasedOnRole(data.user.role);
       }, 1500);
     } catch (err) {
       Swal.fire({
         icon: "error",
         title: "Login Failed",
-        text: "Invalid credentials. Please try again.",
+        text: err.message || "Invalid credentials. Please try again.",
         confirmButtonColor: "#155dfc",
       });
     } finally {

@@ -108,22 +108,6 @@ export default function Navbar() {
               </div>
             ))}
           </div>
-
-          {/* Auth Buttons */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center space-x-4">
-            <Link
-              href="/login"
-              className="px-4 py-2 text-blue-600 font-medium rounded-full hover:bg-blue-50 transition-colors duration-300 hidden lg:block"
-            >
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition-colors duration-300 shadow-sm"
-            >
-              Sign Up
-            </Link>
-          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -256,23 +240,6 @@ export default function Navbar() {
                 )}
               </div>
             ))}
-
-            <div className="flex flex-col space-y-3 pt-4 border-t border-gray-200">
-              <Link
-                href="/login"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full px-4 py-2 text-center text-blue-600 font-medium rounded-full border border-blue-600 hover:bg-blue-50 transition-colors"
-              >
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full px-4 py-2 text-center bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition-colors"
-              >
-                Sign Up
-              </Link>
-            </div>
           </div>
         </div>
       </div>

@@ -35,7 +35,7 @@ export default function Home() {
           if (userData.role === "admin") {
             router.push("/dashboard");
           } else if (userData.role === "teacher") {
-            router.push("/teacher-dashboard");
+            router.push("/teachers");
           } else if (userData.role === "student") {
             router.push("/student-dashboard");
           }
