@@ -95,12 +95,6 @@ const TeachersPage = () => {
               {filteredTeachers.length} teachers found
             </p>
           </div>
-          <Link
-            href="/dashboard/teachers/add"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full md:w-auto text-center"
-          >
-            Add New Teacher
-          </Link>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
