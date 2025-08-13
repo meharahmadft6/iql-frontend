@@ -1,11 +1,22 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const data = localStorage.getItem("userData");
+    if (data) {
+      setUserData(JSON.parse(data));
+    }
+  }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -13,6 +24,23 @@ export default function Navbar() {
 
   const toggleDropdown = (dropdownName) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("userData");
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
+
+  // Function to get initials from name
+  const getInitials = (name) => {
+    if (!name) return "";
+    const names = name.split(" ");
+    let initials = names[0].substring(0, 1).toUpperCase();
+    if (names.length > 1) {
+      initials += names[names.length - 1].substring(0, 1).toUpperCase();
+    }
+    return initials;
   };
 
   return (
@@ -35,15 +63,6 @@ export default function Navbar() {
             {[
               { name: "Home", href: "/" },
               { name: "Our Story", href: "/ourstory" },
-              {
-                name: "Find Tutors",
-                dropdown: [
-                  { name: "Request a tutor", href: "/request-a-teacher" },
-                  { name: "All Tutors", href: "/tutors/all" },
-                  { name: "Online Tutors", href: "/tutors/online" },
-                  { name: "Home Tutors", href: "/tutors/home" },
-                ],
-              },
               {
                 name: "Find Tutor Jobs",
                 dropdown: [
@@ -110,6 +129,47 @@ export default function Navbar() {
           </div>
         </div>
 
+        {/* Right Side - Profile */}
+        {userData && (
+          <div className="hidden md:flex items-center space-x-4 md:me-10">
+            <div className="relative">
+              <button
+                onClick={() => toggleDropdown("profile")}
+                className="flex items-center space-x-2 focus:outline-none"
+              >
+                <div className="w-12 h-12 rounded-full bg-blue-400 flex items-center justify-center text-white font-medium">
+                  {getInitials(userData.name)}
+                </div>
+              </button>
+
+              {openDropdown === "profile" && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-1 z-50">
+                  <div className="px-4 py-3 border-b">
+                    <p className="text-sm font-medium text-gray-900">
+                      {userData.name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {userData.email}
+                    </p>
+                  </div>
+                  <Link
+                    href="/dashboard/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    View Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Mobile Navigation */}
         <div className="md:hidden flex items-center space-x-4">
           <button
@@ -118,7 +178,7 @@ export default function Navbar() {
             aria-label="Toggle menu"
           >
             <svg
-              className="h-6 w-6"
+              className="h-10 w-10"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -166,19 +226,40 @@ export default function Navbar() {
             </button>
           </div>
 
+          {userData && (
+            <div className="px-4 py-4 border-b ">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                  {getInitials(userData.name)}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {userData.name}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {userData.email}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex space-x-2">
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="text-base bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col px-4 py-6 space-y-4">
             {[
               { name: "Home", href: "/" },
               { name: "Our Story", href: "/ourstory" },
               { name: "Services", href: "/services" },
-              {
-                name: "Find Tutors",
-                dropdown: [
-                  { name: "All Tutors", href: "/tutors/all" },
-                  { name: "Online Tutors", href: "/tutors/online" },
-                  { name: "Home Tutors", href: "/tutors/home" },
-                ],
-              },
               {
                 name: "Find Tutor Jobs",
                 dropdown: [

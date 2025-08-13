@@ -40,17 +40,24 @@ export default function LoginPage() {
     }));
   };
 
-  const redirectBasedOnRole = (role) => {
+  const redirectBasedOnRole = (role, profileExists) => {
     switch (role) {
       case "admin":
         router.push("/dashboard");
         break;
+
       case "teacher":
-        router.push("/teachers");
+        if (profileExists) {
+          router.push("/teachers/dashboard");
+        } else {
+          router.push("/teachers");
+        }
         break;
+
       case "student":
         router.push("/students");
         break;
+
       default:
         router.push("/");
     }
@@ -77,6 +84,7 @@ export default function LoginPage() {
         },
         body: JSON.stringify(formData),
       });
+      console.log("Response:", response);
 
       const data = await response.json();
 
@@ -106,7 +114,7 @@ export default function LoginPage() {
 
       // Redirect based on role after success
       setTimeout(() => {
-        redirectBasedOnRole(data.user.role);
+        redirectBasedOnRole(data.user.role, data.profileExists);
       }, 1500);
     } catch (err) {
       Swal.fire({

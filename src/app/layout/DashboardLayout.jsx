@@ -397,7 +397,6 @@ function Sidebar({ user }) {
 }
 
 // Main Layout Component
-// Main Layout Component
 export default function DashboardLayout({ children, user }) {
   const [isOpen, setIsOpen] = useState(true);
   const isMobile = useIsMobile();
