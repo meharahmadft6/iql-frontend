@@ -1,7 +1,7 @@
 // pages/teacher/profile/create.jsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createTeacherProfile } from "../../api/teacher.api";
 import Navbar from "../../components/NavbarProfile";
@@ -12,6 +12,11 @@ const CreateTeacherProfile = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const MAPBOX_TOKEN =
+    "pk.eyJ1IjoiYWhtYWRmdDYiLCJhIjoiY21lYjY5MG9rMDZoaTJrc2M4NWtlc2EwbCJ9.J0DPetrkzXi_nyroAEayzQ";
 
   // Initial form state
   const [formData, setFormData] = useState({
@@ -70,6 +75,41 @@ const CreateTeacherProfile = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  useEffect(() => {
+    if (formData.location.length > 2) {
+      const timer = setTimeout(() => {
+        fetchSuggestions(formData.location);
+      }, 300); // debounce
+      return () => clearTimeout(timer);
+    } else {
+      setSuggestions([]);
+    }
+  }, [formData.location]);
+
+  const fetchSuggestions = async (query) => {
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          query
+        )}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&limit=5&types=place,locality,region,country`
+      );
+      const data = await response.json();
+      setSuggestions(data.features || []);
+    } catch (error) {
+      console.error("Error fetching location suggestions:", error);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    const placeName = suggestion.place_name;
+    setFormData((prev) => ({
+      ...prev,
+      location: placeName,
+    }));
+    setSuggestions([]);
+    setShowSuggestions(false);
   };
 
   // Handle array field changes (subjects, education, experience)
@@ -246,7 +286,7 @@ const CreateTeacherProfile = () => {
       }
 
       await createTeacherProfile(formDataToSend);
-      router.push("/teacher/dashboard");
+      router.push("/teachers/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create profile");
     } finally {
@@ -257,16 +297,59 @@ const CreateTeacherProfile = () => {
   // Common languages options
   const languageOptions = [
     "English",
+    "Mandarin Chinese",
+    "Hindi",
+    "Spanish",
+    "French",
+    "Standard Arabic",
+    "Bengali",
+    "Portuguese",
+    "Russian",
     "Urdu",
+    "Indonesian",
+    "German",
+    "Japanese",
     "Punjabi",
+    "Marathi",
+    "Telugu",
+    "Turkish",
+    "Tamil",
+    "Vietnamese",
+    "Korean",
+    "Italian",
+    "Gujarati",
+    "Polish",
+    "Ukrainian",
+    "Malayalam",
+    "Kannada",
+    "Odia",
     "Sindhi",
     "Pashto",
     "Balochi",
-    "Arabic",
-    "French",
-    "German",
-    "Spanish",
-    "Chinese",
+    "Persian (Farsi)",
+    "Hebrew",
+    "Thai",
+    "Dutch",
+    "Swedish",
+    "Czech",
+    "Greek",
+    "Hungarian",
+    "Finnish",
+    "Romanian",
+    "Slovak",
+    "Serbian",
+    "Bulgarian",
+    "Malay",
+    "Hausa",
+    "Yoruba",
+    "Zulu",
+    "Amharic",
+    "Burmese",
+    "Nepali",
+    "Sinhala",
+    "Khmer",
+    "Lao",
+    "Tagalog (Filipino)",
     "Other",
   ];
 
@@ -370,17 +453,40 @@ const CreateTeacherProfile = () => {
           {step === 2 && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Contact Information</h2>
-              <div>
+              <div className="relative">
                 <label className="block mb-1">Location*</label>
                 <input
                   type="text"
                   name="location"
                   value={formData.location}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      location: e.target.value,
+                    }))
+                  }
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowSuggestions(false), 200)
+                  }
                   className="w-full p-2 border rounded"
-                  placeholder="City, Country"
+                  placeholder="Town/City, Country"
                   required
+                  autoComplete="on"
                 />
+                {showSuggestions && suggestions.length > 0 && (
+                  <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                    {suggestions.map((suggestion) => (
+                      <li
+                        key={suggestion.id}
+                        className="p-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => handleSuggestionClick(suggestion)}
+                      >
+                        {suggestion.place_name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <div>
                 <label className="block mb-1">Phone Number*</label>

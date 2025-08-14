@@ -32,7 +32,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
     const fetchTeachersProfile = async () => {
       try {
         const response = await API.get("/teachers/me");
-        console.log("Teachers Profile Data:", response.data);
+
         setTeachersData(response.data.data);
 
         // Redirect if not approved

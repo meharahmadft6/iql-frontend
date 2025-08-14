@@ -10,7 +10,10 @@ export default function HeroSection() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isGeolocating, setIsGeolocating] = useState(false);
 
-  // Fetch location suggestions from OpenStreetMap Nominatim API
+  const MAPBOX_TOKEN =
+    "pk.eyJ1IjoiYWhtYWRmdDYiLCJhIjoiY21lYjY5MG9rMDZoaTJrc2M4NWtlc2EwbCJ9.J0DPetrkzXi_nyroAEayzQ";
+
+  // Fetch location suggestions from Mapbox Places API
   const fetchLocationSuggestions = async (query) => {
     if (query.length < 3) {
       setLocationSuggestions([]);
@@ -19,16 +22,18 @@ export default function HeroSection() {
 
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${query}&addressdetails=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          query
+        )}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&limit=5&types=place,locality,region,country`
       );
       const data = await response.json();
-      setLocationSuggestions(data.slice(0, 5));
+      setLocationSuggestions(data.features || []);
     } catch (error) {
       console.error("Error fetching location suggestions:", error);
     }
   };
 
-  // Get user's current location
+  // Get user's current location via browser & Mapbox reverse geocoding
   const getCurrentLocation = () => {
     setIsGeolocating(true);
     if (navigator.geolocation) {
@@ -37,15 +42,12 @@ export default function HeroSection() {
           try {
             const { latitude, longitude } = position.coords;
             const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}&limit=1`
             );
             const data = await response.json();
-            setLocation(
-              data.address.city ||
-                data.address.town ||
-                data.address.village ||
-                ""
-            );
+            if (data.features && data.features.length > 0) {
+              setLocation(data.features[0].place_name);
+            }
             setIsGeolocating(false);
           } catch (error) {
             console.error("Error getting location:", error);
@@ -75,7 +77,7 @@ export default function HeroSection() {
   const handleSearch = (e) => {
     e.preventDefault();
     console.log({ subject, location });
-    // Add your search logic here
+    // Your search logic here
   };
 
   return (
@@ -89,7 +91,6 @@ export default function HeroSection() {
           className="object-cover object-center"
           priority
         />
-        {/* Dark overlay for better text contrast */}
         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
       </div>
 
@@ -104,8 +105,8 @@ export default function HeroSection() {
           </p>
         </div>
 
-        {/* Transparent Search Box */}
-        <div className=" py-4 px-4">
+        {/* Search Box */}
+        <div className="py-4 px-4">
           <div className="bg-white/90 rounded-2xl shadow-2xl p-10 max-w-4xl mx-auto w-full border border-white/40">
             <form
               onSubmit={handleSearch}
@@ -174,16 +175,16 @@ export default function HeroSection() {
                   />
                   {showSuggestions && locationSuggestions.length > 0 && (
                     <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
-                      {locationSuggestions.map((suggestion, index) => (
+                      {locationSuggestions.map((suggestion) => (
                         <li
-                          key={index}
+                          key={suggestion.id}
                           className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-gray-800"
                           onClick={() => {
-                            setLocation(suggestion.display_name);
+                            setLocation(suggestion.place_name);
                             setShowSuggestions(false);
                           }}
                         >
-                          {suggestion.display_name}
+                          {suggestion.place_name}
                         </li>
                       ))}
                     </ul>
