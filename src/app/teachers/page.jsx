@@ -18,28 +18,7 @@ const CreateTeacherProfile = () => {
 
   const MAPBOX_TOKEN =
     "pk.eyJ1IjoiYWhtYWRmdDYiLCJhIjoiY21lYjY5MG9rMDZoaTJrc2M4NWtlc2EwbCJ9.J0DPetrkzXi_nyroAEayzQ";
-  useEffect(() => {
-    const storedUser = localStorage.getItem("userData");
-    if (!storedUser) {
-      router.replace("/login");
-      return;
-    }
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      if (parsedUser.role !== "teacher") {
-        router.replace("/unauthorized");
-      } else {
-        setAuthChecked(true);
-      }
-    } catch (err) {
-      console.error("Invalid user data in localStorage", err);
-      router.replace("/login");
-    }
-  }, [router]);
 
-  if (!authChecked) {
-    return null; // nothing will render until auth check is done
-  }
   // Initial form state
   const [formData, setFormData] = useState({
     // Step 1 - Basic Details
@@ -89,7 +68,6 @@ const CreateTeacherProfile = () => {
     idProofFile: null,
     profilePhoto: null,
   });
-
   // Handle input change for simple fields
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -109,6 +87,29 @@ const CreateTeacherProfile = () => {
       setSuggestions([]);
     }
   }, [formData.location]);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("userData");
+    if (!storedUser) {
+      router.replace("/login");
+      return;
+    }
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      if (parsedUser.role !== "teacher") {
+        router.replace("/unauthorized");
+      } else {
+        setAuthChecked(true);
+      }
+    } catch (err) {
+      console.error("Invalid user data in localStorage", err);
+      router.replace("/login");
+    }
+  }, [router]);
+
+  if (!authChecked) {
+    return null; // nothing will render until auth check is done
+  }
 
   const fetchSuggestions = async (query) => {
     try {
