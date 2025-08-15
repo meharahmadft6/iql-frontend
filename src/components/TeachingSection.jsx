@@ -29,7 +29,7 @@ const TeachingSection = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {/* Teachers Column */}
+          {/* tutors Column */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
             <div className="p-6 border-b border-gray-100 bg-gray-50">
               <div className="flex items-center">
@@ -45,8 +45,8 @@ const TeachingSection = () => {
               <ul className="space-y-3">
                 {[
                   {
-                    title: "Qualified Teachers",
-                    href: "/teachers",
+                    title: "Qualified tutors",
+                    href: "/tutors",
                     icon: <BookOpen className="h-6 w-6 text-emerald-600" />,
                     desc: "Find certified educators for all subjects",
                   },
@@ -58,7 +58,7 @@ const TeachingSection = () => {
                   },
                   {
                     title: "Online Instructors",
-                    href: "/online-teachers",
+                    href: "/online-tutors",
                     icon: <Laptop className="h-6 w-6 text-emerald-600" />,
                     desc: "Learn from anywhere with virtual classes",
                   },
@@ -101,11 +101,11 @@ const TeachingSection = () => {
               </ul>
               <div className="mt-6">
                 <Link
-                  href="/teachers"
+                  href="/tutors"
                   className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-medium rounded-lg transition duration-200"
                 >
                   <BookOpen className="h-5 w-5" />
-                  Browse All Teachers
+                  Browse All tutors
                 </Link>
               </div>
             </div>

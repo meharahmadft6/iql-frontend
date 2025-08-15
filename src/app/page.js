@@ -1,4 +1,5 @@
 "use client";
+import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import FuturisticReveal from "../components/Moon";
 import StatsSection from "../components/StatsSection";
@@ -6,7 +7,6 @@ import TeachingSection from "../components/TeachingSection";
 import TestimonialSlider from "../components/TestimonialSlider";
 import TrustedBy from "../components/TrustedBy";
 import HeroSection from "../components/Hero";
-import Navbar from "../components/Navbar";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../api/user.api";
@@ -14,7 +14,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function Home() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
