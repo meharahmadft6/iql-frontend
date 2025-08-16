@@ -109,7 +109,7 @@ const TeacherProfilePage = () => {
             </div>
             <div className="mt-4 md:mt-0">
               <Link
-                href="/teacher/profile/edit"
+                href="/teachers/profile/edit"
                 className="inline-flex items-center px-4 py-2 bg-white text-blue-600 rounded-md font-medium hover:bg-blue-50 transition-colors shadow-sm"
               >
                 <PencilIcon className="h-5 w-5 mr-2" />

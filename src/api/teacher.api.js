@@ -2,7 +2,8 @@ import { API } from "./api";
 
 export const getCurrentTeacher = () => API.get("/teachers/me");
 export const getAllPublicTeacherProfiles = () => API.get("/teachers/public");
-export const getPublicTeacherProfile = (id) => API.get(`/teachers/public/${id}`);
+export const getPublicTeacherProfile = (id) =>
+  API.get(`/teachers/public/${id}`);
 export const getAllTeachers = () => API.get("/teachers/all");
 export const approveTeacher = (teacherId, isApproved) =>
   API.patch(`/teachers/approve/${teacherId}`, { isApproved });

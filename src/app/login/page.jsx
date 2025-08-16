@@ -52,7 +52,7 @@ export default function LoginPage() {
         } else {
           router.push("/teachers");
         }
-        break;
+        break;  
 
       case "student":
         router.push("/students");

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation"; // Add usePathname import
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   HomeIcon,
@@ -22,24 +22,11 @@ import { API } from "../../../api/api";
 
 const DashboardLayout = ({ children, title = "Dashboard" }) => {
   const router = useRouter();
-  const pathname = usePathname(); // Use usePathname hook
   const [teachersData, setTeachersData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const [showApprovedMessage, setShowApprovedMessage] = useState(false);
-
-  useEffect(() => {
-    // Check if profile is approved and message not already shown
-    if (
-      teachersData?.isApproved &&
-      !localStorage.getItem("approvedMessageShown")
-    ) {
-      setShowApprovedMessage(true);
-      localStorage.setItem("approvedMessageShown", "true"); // Mark as shown
-    }
-  }, [teachersData]);
 
   useEffect(() => {
     const fetchTeachersProfile = async () => {
@@ -48,10 +35,10 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
 
         setTeachersData(response.data.data);
 
-        // Redirect if not approved - use pathname instead of router.pathname
+        // Redirect if not approved
         if (
           !response.data.data.isApproved &&
-          pathname !== "/teachers/dashboard"
+          router.pathname !== "/teachers/dashboard"
         ) {
           router.push("/teachers/dashboard");
         }
@@ -64,7 +51,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
     };
 
     fetchTeachersProfile();
-  }, [router, pathname]); // Add pathname to dependency array
+  }, [router]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -132,17 +119,14 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
               href="/teachers/dashboard"
               icon={<HomeIcon className="h-5 w-5" />}
               text="Dashboard"
-              active={pathname === "/teachers/dashboard"}
+              active={router.pathname === "/teachers/dashboard"}
               mobile
             />
             <NavItem
               href="/teachers/profile"
               icon={<UserCircleIcon className="h-5 w-5" />}
               text="Profile"
-              active={
-                pathname === "/teachers/profile" ||
-                pathname === "/teachers/profile/edit"
-              }
+              active={router.pathname === "/teachers/profile"}
               mobile
             />
             {teachersData?.isApproved && (
@@ -151,28 +135,28 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                   href="/teachers/jobs"
                   icon={<BriefcaseIcon className="h-5 w-5" />}
                   text="Browse Jobs"
-                  active={pathname === "/teachers/jobs"}
+                  active={router.pathname === "/teachers/jobs"}
                   mobile
                 />
                 <NavItem
                   href="/teachers/applications"
                   icon={<ClipboardDocumentListIcon className="h-5 w-5" />}
                   text="My Applications"
-                  active={pathname === "/teachers/applications"}
+                  active={router.pathname === "/teachers/applications"}
                   mobile
                 />
                 <NavItem
                   href="/teachers/chat"
                   icon={<ChatBubbleLeftRightIcon className="h-5 w-5" />}
                   text="Messages"
-                  active={pathname === "/teachers/chat"}
+                  active={router.pathname === "/teachers/chat"}
                   mobile
                 />
                 <NavItem
                   href="/teachers/wallet"
                   icon={<CreditCardIcon className="h-5 w-5" />}
                   text="Wallet"
-                  active={pathname === "/teachers/wallet"}
+                  active={router.pathname === "/teachers/wallet"}
                   mobile
                 />
               </>
@@ -208,16 +192,13 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                 href="/teachers/dashboard"
                 icon={<HomeIcon className="h-6 w-6" />}
                 text="Dashboard"
-                active={pathname === "/teachers/dashboard"}
+                active={router.pathname === "/teachers/dashboard"}
               />
               <NavItem
                 href="/teachers/profile"
                 icon={<UserCircleIcon className="h-6 w-6" />}
                 text="Profile"
-                active={
-                  pathname === "/teachers/profile" ||
-                  pathname === "/teachers/profile/edit"
-                }
+                active={router.pathname === "/teachers/profile"}
               />
               {teachersData?.isApproved && (
                 <>
@@ -225,25 +206,25 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                     href="/teachers/jobs"
                     icon={<BriefcaseIcon className="h-6 w-6" />}
                     text="Browse Jobs"
-                    active={pathname === "/teachers/jobs"}
+                    active={router.pathname === "/teachers/jobs"}
                   />
                   <NavItem
                     href="/teachers/applications"
                     icon={<ClipboardDocumentListIcon className="h-6 w-6" />}
                     text="My Applications"
-                    active={pathname === "/teachers/applications"}
+                    active={router.pathname === "/teachers/applications"}
                   />
                   <NavItem
                     href="/teachers/chat"
                     icon={<ChatBubbleLeftRightIcon className="h-6 w-6" />}
                     text="Messages"
-                    active={pathname === "/teachers/chat"}
+                    active={router.pathname === "/teachers/chat"}
                   />
                   <NavItem
                     href="/teachers/wallet"
                     icon={<CreditCardIcon className="h-6 w-6" />}
                     text="Wallet"
-                    active={pathname === "/teachers/wallet"}
+                    active={router.pathname === "/teachers/wallet"}
                   />
                 </>
               )}
@@ -435,21 +416,19 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
               </div>
             </div>
           ) : (
-            showApprovedMessage && (
-              <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <CheckCircleIcon className="h-5 w-5 text-green-400" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-green-700">
-                      Your profile has been approved! You now have full access
-                      to all features.
-                    </p>
-                  </div>
+            <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <CheckCircleIcon className="h-5 w-5 text-green-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-green-700">
+                    Your profile has been approved! You now have full access to
+                    all features.
+                  </p>
                 </div>
               </div>
-            )
+            </div>
           )}
           {children}
         </main>
