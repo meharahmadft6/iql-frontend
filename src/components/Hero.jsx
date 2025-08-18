@@ -2,18 +2,17 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { FiSearch, FiMapPin, FiCrosshair } from "react-icons/fi";
-
+import { useRouter } from "next/navigation";
 export default function HeroSection() {
   const [subject, setSubject] = useState("");
   const [location, setLocation] = useState("");
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isGeolocating, setIsGeolocating] = useState(false);
+  const router = useRouter();
+  const GEOAPIFY_KEY = "216ee53519b343a5be36cba1a2fa6ed6";
 
-  const MAPBOX_TOKEN =
-    "pk.eyJ1IjoiYWhtYWRmdDYiLCJhIjoiY21lYjY5MG9rMDZoaTJrc2M4NWtlc2EwbCJ9.J0DPetrkzXi_nyroAEayzQ";
-
-  // Fetch location suggestions from Mapbox Places API
+  // Fetch location suggestions from Geoapify Autocomplete API
   const fetchLocationSuggestions = async (query) => {
     if (query.length < 3) {
       setLocationSuggestions([]);
@@ -22,9 +21,9 @@ export default function HeroSection() {
 
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
           query
-        )}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&limit=5&types=place,locality,region,country`
+        )}&apiKey=${GEOAPIFY_KEY}&limit=5`
       );
       const data = await response.json();
       setLocationSuggestions(data.features || []);
@@ -33,7 +32,7 @@ export default function HeroSection() {
     }
   };
 
-  // Get user's current location via browser & Mapbox reverse geocoding
+  // Get user's current location via browser & Geoapify reverse geocoding
   const getCurrentLocation = () => {
     setIsGeolocating(true);
     if (navigator.geolocation) {
@@ -42,11 +41,12 @@ export default function HeroSection() {
           try {
             const { latitude, longitude } = position.coords;
             const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}&limit=1`
+              `https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&apiKey=${GEOAPIFY_KEY}`
             );
             const data = await response.json();
             if (data.features && data.features.length > 0) {
-              setLocation(data.features[0].place_name);
+              // Use the formatted address from Geoapify
+              setLocation(data.features[0].properties.formatted);
             }
             setIsGeolocating(false);
           } catch (error) {
@@ -76,8 +76,27 @@ export default function HeroSection() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log({ subject, location });
-    // Your search logic here
+
+    // Validate inputs
+    if (!subject.trim() && !location.trim()) {
+      // If both are empty, redirect to all tutors page
+      router.push("/tutors");
+      return;
+    }
+
+    // Create query params object
+    const queryParams = new URLSearchParams();
+
+    if (subject.trim()) {
+      queryParams.append("subject", subject.trim());
+    }
+
+    if (location.trim()) {
+      queryParams.append("location", location.trim());
+    }
+
+    // Redirect to tutors page with query params
+    router.push(`/tutors?${queryParams.toString()}`);
   };
 
   return (
@@ -177,14 +196,14 @@ export default function HeroSection() {
                     <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
                       {locationSuggestions.map((suggestion) => (
                         <li
-                          key={suggestion.id}
+                          key={suggestion.properties.place_id}
                           className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-gray-800"
                           onClick={() => {
-                            setLocation(suggestion.place_name);
+                            setLocation(suggestion.properties.formatted);
                             setShowSuggestions(false);
                           }}
                         >
-                          {suggestion.place_name}
+                          {suggestion.properties.formatted}
                         </li>
                       ))}
                     </ul>

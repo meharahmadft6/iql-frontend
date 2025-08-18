@@ -19,9 +19,7 @@ const EditTeacherProfile = () => {
   const [authChecked, setAuthChecked] = useState(false);
   const [teacher, setTeacher] = useState(null);
 
-  const MAPBOX_TOKEN =
-    "pk.eyJ1IjoiYWhtYWRmdDYiLCJhIjoiY21lYjY5MG9rMDZoaTJrc2M4NWtlc2EwbCJ9.J0DPetrkzXi_nyroAEayzQ";
-
+  const GEOAPIFY_KEY = "216ee53519b343a5be36cba1a2fa6ed6";
   // Form state
   const [formData, setFormData] = useState({
     speciality: "",
@@ -163,7 +161,7 @@ const EditTeacherProfile = () => {
     if (formData.location.length > 2) {
       const timer = setTimeout(() => {
         fetchSuggestions(formData.location);
-      }, 300);
+      }, 300); // debounce
       return () => clearTimeout(timer);
     } else {
       setSuggestions([]);
@@ -173,11 +171,12 @@ const EditTeacherProfile = () => {
   const fetchSuggestions = async (query) => {
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
           query
-        )}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&limit=5&types=place,locality,region,country`
+        )}&apiKey=${GEOAPIFY_KEY}&limit=5`
       );
       const data = await response.json();
+      // Geoapify returns suggestions in data.features array
       setSuggestions(data.features || []);
     } catch (error) {
       console.error("Error fetching location suggestions:", error);
@@ -185,7 +184,8 @@ const EditTeacherProfile = () => {
   };
 
   const handleSuggestionClick = (suggestion) => {
-    const placeName = suggestion.place_name;
+    // Geoapify's format for place name is different than Mapbox
+    const placeName = suggestion.properties.formatted;
     setFormData((prev) => ({
       ...prev,
       location: placeName,
@@ -491,11 +491,11 @@ const EditTeacherProfile = () => {
                     <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                       {suggestions.map((suggestion) => (
                         <li
-                          key={suggestion.id}
+                          key={suggestion.properties.place_id}
                           className="p-2 hover:bg-gray-100 cursor-pointer"
                           onClick={() => handleSuggestionClick(suggestion)}
                         >
-                          {suggestion.place_name}
+                          {suggestion.properties.formatted}
                         </li>
                       ))}
                     </ul>

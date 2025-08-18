@@ -2,6 +2,11 @@ import { API } from "./api";
 
 export const getCurrentTeacher = () => API.get("/teachers/me");
 export const getAllPublicTeacherProfiles = () => API.get("/teachers/public");
+export const getHomeTutors = () => API.get("/teachers/home-tutors");
+export const getOnlineTeachers = () => API.get("/teachers/online-teachers");
+export const getHomeworkHelpers = () => API.get("/teachers/homework-helpers");
+export const getFilteredTeachers = (params) =>
+  API.get("/teachers/filter", { params });
 export const getPublicTeacherProfile = (id) =>
   API.get(`/teachers/public/${id}`);
 export const getAllTeachers = () => API.get("/teachers/all");

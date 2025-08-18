@@ -39,9 +39,9 @@ export default function Navbar() {
                 name: "Find Tutors",
                 dropdown: [
                   { name: "Request a tutor", href: "/request-a-teacher" },
-                  { name: "All Tutors", href: "/tutors/all" },
-                  { name: "Online Tutors", href: "/tutors/online" },
-                  { name: "Home Tutors", href: "/tutors/home" },
+                  { name: "All Tutors", href: "/tutors" },
+                  { name: "Online Tutors", href: "/tutors/online-tutors" },
+                  { name: "Home Tutors", href: "/tutors/home-tutors" },
                 ],
               },
               {

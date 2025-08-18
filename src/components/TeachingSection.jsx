@@ -52,19 +52,19 @@ const TeachingSection = () => {
                   },
                   {
                     title: "Home Tutors",
-                    href: "/home-tutors",
+                    href: "/tutors/home-tutors",
                     icon: <Home className="h-6 w-6 text-emerald-600" />,
                     desc: "Personalized learning at your location",
                   },
                   {
                     title: "Online Instructors",
-                    href: "/online-tutors",
+                    href: "/tutors/online-tutors",
                     icon: <Laptop className="h-6 w-6 text-emerald-600" />,
                     desc: "Learn from anywhere with virtual classes",
                   },
                   {
                     title: "Assignment Help",
-                    href: "/assignment-help",
+                    href: "/tutors/assignment-help",
                     icon: <PenSquare className="h-6 w-6 text-emerald-600" />,
                     desc: "Get expert guidance on your work",
                   },

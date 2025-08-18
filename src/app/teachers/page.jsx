@@ -16,9 +16,7 @@ const CreateTeacherProfile = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
-  const MAPBOX_TOKEN =
-    "pk.eyJ1IjoiYWhtYWRmdDYiLCJhIjoiY21lYjY5MG9rMDZoaTJrc2M4NWtlc2EwbCJ9.J0DPetrkzXi_nyroAEayzQ";
-
+  const GEOAPIFY_KEY = "216ee53519b343a5be36cba1a2fa6ed6";
   // Initial form state
   const [formData, setFormData] = useState({
     // Step 1 - Basic Details
@@ -87,7 +85,6 @@ const CreateTeacherProfile = () => {
       setSuggestions([]);
     }
   }, [formData.location]);
-
   useEffect(() => {
     const storedUser = localStorage.getItem("userData");
     if (!storedUser) {
@@ -114,11 +111,12 @@ const CreateTeacherProfile = () => {
   const fetchSuggestions = async (query) => {
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
           query
-        )}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&limit=5&types=place,locality,region,country`
+        )}&apiKey=${GEOAPIFY_KEY}&limit=5`
       );
       const data = await response.json();
+      // Geoapify returns suggestions in data.features array
       setSuggestions(data.features || []);
     } catch (error) {
       console.error("Error fetching location suggestions:", error);
@@ -126,7 +124,8 @@ const CreateTeacherProfile = () => {
   };
 
   const handleSuggestionClick = (suggestion) => {
-    const placeName = suggestion.place_name;
+    // Geoapify's format for place name is different than Mapbox
+    const placeName = suggestion.properties.formatted;
     setFormData((prev) => ({
       ...prev,
       location: placeName,
@@ -134,7 +133,6 @@ const CreateTeacherProfile = () => {
     setSuggestions([]);
     setShowSuggestions(false);
   };
-
   // Handle array field changes (subjects, education, experience)
   const handleArrayChange = (arrayName, index, e) => {
     const { name, value, type, checked } = e.target;
@@ -501,11 +499,11 @@ const CreateTeacherProfile = () => {
                   <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                     {suggestions.map((suggestion) => (
                       <li
-                        key={suggestion.id}
+                        key={suggestion.properties.place_id}
                         className="p-2 hover:bg-gray-100 cursor-pointer"
                         onClick={() => handleSuggestionClick(suggestion)}
                       >
-                        {suggestion.place_name}
+                        {suggestion.properties.formatted}
                       </li>
                     ))}
                   </ul>
