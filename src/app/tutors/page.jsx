@@ -238,7 +238,6 @@ const TeachersContent = () => {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
-        <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center max-w-md mx-auto p-8">
             <div className="text-red-500 text-6xl mb-4">⚠️</div>
@@ -254,7 +253,6 @@ const TeachersContent = () => {
             </button>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
