@@ -27,14 +27,15 @@ export const metadata = {
     "affordable tutoring",
   ],
   openGraph: {
-    title: "Infinity Quotient Learning - Better Alternative to TeacherOn",
+    title:
+      "Infinity Quotient Learning - Find the Best Online Tutors & Teachers",
     description:
-      "Connect with verified tutors across 100+ subjects at competitive rates. India's most trusted tutoring platform.",
+      "Connect with verified tutors across 100+ subjects at competitive rates. Pakistan's most trusted tutoring platform.",
     url: "https://infinityquotientlearning.com",
     siteName: "Infinity Quotient Learning",
     images: [
       {
-        url: "https://infinityquotientlearning.com/og-image.jpg",
+        url: "https://infinityquotientlearning.com/infinity.jpg",
         width: 1200,
         height: 630,
       },
@@ -47,7 +48,7 @@ export const metadata = {
     title: "Infinity Quotient Learning | Find the Best Online Tutors",
     description:
       "Better than TeacherOn - Verified tutors, lower fees, and 100% satisfaction guarantee",
-    images: ["https://yourwebsite.com/twitter-image.jpg"],
+    images: ["https://infinityquotientlearning.com/infinity.jpg"],
   },
 };
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
@@ -9,7 +9,8 @@ import {
 } from "../../api/teacher.api";
 import { useSearchParams } from "next/navigation";
 
-const TeachersPage = () => {
+// Create a separate component that uses useSearchParams
+const TeachersContent = () => {
   const searchParams = useSearchParams();
   const [allTeachers, setAllTeachers] = useState([]); // Store original data
   const [displayedTeachers, setDisplayedTeachers] = useState([]); // What we show
@@ -259,263 +260,287 @@ const TeachersPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
+    <main className="flex-grow">
+      {/* Enhanced Hero Section */}
+      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black opacity-10"></div>
+        <div className="relative container mx-auto px-4 py-16">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+              Find Your Perfect Tutor
+            </h1>
+            <p className="text-lg md:text-xl opacity-90 max-w-2xl mx-auto mb-8 leading-relaxed">
+              Connect with qualified, experienced tutors who can help you
+              achieve your learning goals and excel in your studies
+            </p>
 
-      <main className="flex-grow">
-        {/* Enhanced Hero Section */}
-        <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700 text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-black opacity-10"></div>
-          <div className="relative container mx-auto px-4 py-16">
-            <div className="text-center max-w-4xl mx-auto">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Find Your Perfect Tutor
-              </h1>
-              <p className="text-lg md:text-xl opacity-90 max-w-2xl mx-auto mb-8 leading-relaxed">
-                Connect with qualified, experienced tutors who can help you
-                achieve your learning goals and excel in your studies
-              </p>
+            {/* Filter Mode Indicator */}
+            <div className="flex items-center justify-center gap-4 text-sm">
+              <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-4 py-2 text-black">
+                {activeFilterMode === "url" && " Showing results from search"}
+                {activeFilterMode === "filters" && " Custom filtered results"}
+                {activeFilterMode === "all" && " All available tutors"}
+              </div>
+              <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-4 py-2 text-black">
+                📊 {displayedTeachers.length} tutors found
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              {/* Filter Mode Indicator */}
-              <div className="flex items-center justify-center gap-4 text-sm">
-                <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-4 py-2 text-black">
-                  {activeFilterMode === "url" && " Showing results from search"}
-                  {activeFilterMode === "filters" && " Custom filtered results"}
-                  {activeFilterMode === "all" && " All available tutors"}
-                </div>
-                <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-4 py-2 text-black">
-                  📊 {displayedTeachers.length} tutors found
-                </div>
+      <div className="container mx-auto px-4 py-8 lg:px-12">
+        {/* Action Bar */}
+        <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            {/* Left Side - Filter Toggle & Mode Buttons */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="lg:hidden bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors"
+              >
+                🔍 Filters {showFilters ? "−" : "+"}
+              </button>
+
+              {activeFilterMode !== "all" && (
+                <button
+                  onClick={resetToAll}
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                >
+                  👥 Show All Tutors
+                </button>
+              )}
+            </div>
+
+            {/* Right Side - View Controls */}
+            <div className="flex items-center gap-4">
+              {/* Sort Dropdown */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="name">Sort by Name</option>
+                <option value="fee_low">Fee: Low to High</option>
+                <option value="fee_high">Fee: High to Low</option>
+                <option value="experience">Most Experienced</option>
+              </select>
+
+              {/* View Mode Toggle */}
+              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  ⊞
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 transition-colors ${
+                    viewMode === "list"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  ☰
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8 lg:px-12">
-          {/* Action Bar */}
-          <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              {/* Left Side - Filter Toggle & Mode Buttons */}
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="lg:hidden bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors"
-                >
-                  🔍 Filters {showFilters ? "−" : "+"}
-                </button>
-
+        {/* Filters Section */}
+        <div className={`${showFilters ? "block" : "hidden"} lg:block mb-8`}>
+          <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-800">
+                🎯 Filter Tutors
+              </h2>
+              <div className="flex gap-2">
                 {activeFilterMode !== "all" && (
                   <button
-                    onClick={resetToAll}
-                    className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-                  >
-                    👥 Show All Tutors
-                  </button>
-                )}
-              </div>
-
-              {/* Right Side - View Controls */}
-              <div className="flex items-center gap-4">
-                {/* Sort Dropdown */}
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="name">Sort by Name</option>
-                  <option value="fee_low">Fee: Low to High</option>
-                  <option value="fee_high">Fee: High to Low</option>
-                  <option value="experience">Most Experienced</option>
-                </select>
-
-                {/* View Mode Toggle */}
-                <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`p-2 transition-colors ${
-                      viewMode === "grid"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    ⊞
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`p-2 transition-colors ${
-                      viewMode === "list"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    ☰
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filters Section */}
-          <div className={`${showFilters ? "block" : "hidden"} lg:block mb-8`}>
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  🎯 Filter Tutors
-                </h2>
-                <div className="flex gap-2">
-                  {activeFilterMode !== "all" && (
-                    <button
-                      onClick={clearFilters}
-                      className="text-sm text-gray-600 hover:text-gray-800 font-medium bg-gray-100 px-3 py-1 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      Clear Filters
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    📚 Subject
-                  </label>
-                  <input
-                    type="text"
-                    name="subject"
-                    value={filters.subject}
-                    onChange={handleFilterChange}
-                    disabled={activeFilterMode === "url"}
-                    placeholder="Math, Science, English..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    📍 Location
-                  </label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={filters.location}
-                    onChange={handleFilterChange}
-                    disabled={activeFilterMode === "url"}
-                    placeholder="City, Country..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    💰 Min Fee
-                  </label>
-                  <input
-                    type="number"
-                    name="minFee"
-                    value={filters.minFee}
-                    onChange={handleFilterChange}
-                    disabled={activeFilterMode === "url"}
-                    placeholder="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    💰 Max Fee
-                  </label>
-                  <input
-                    type="number"
-                    name="maxFee"
-                    value={filters.maxFee}
-                    onChange={handleFilterChange}
-                    disabled={activeFilterMode === "url"}
-                    placeholder="∞"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    🎓 Min Experience
-                  </label>
-                  <input
-                    type="number"
-                    name="experience"
-                    value={filters.experience}
-                    onChange={handleFilterChange}
-                    disabled={activeFilterMode === "url"}
-                    placeholder="Years"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
-                  />
-                </div>
-
-                <div className="space-y-2 flex items-end">
-                  <label className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                    <input
-                      type="checkbox"
-                      name="online"
-                      checked={filters.online}
-                      onChange={handleFilterChange}
-                      disabled={activeFilterMode === "url"}
-                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 disabled:opacity-50"
-                    />
-                    <span className="text-sm font-medium text-gray-700">
-                      🌐 Online Available
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Results */}
-          {displayedTeachers.length > 0 ? (
-            <div
-              className={
-                viewMode === "grid"
-                  ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-                  : "space-y-4"
-              }
-            >
-              {displayedTeachers.map((teacher) => (
-                <TeacherCard
-                  key={teacher._id}
-                  teacher={teacher}
-                  viewMode={viewMode}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20">
-              <div className="max-w-md mx-auto">
-                <div className="text-8xl mb-6">🔍</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                  No tutors found
-                </h3>
-                <p className="text-gray-600 mb-8 leading-relaxed">
-                  We couldn't find any tutors matching your criteria. Try
-                  adjusting your filters or browse all available tutors.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <button
                     onClick={clearFilters}
-                    className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                    className="text-sm text-gray-600 hover:text-gray-800 font-medium bg-gray-100 px-3 py-1 rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Clear Filters
                   </button>
-                  <button
-                    onClick={resetToAll}
-                    className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                  >
-                    View All Tutors
-                  </button>
-                </div>
+                )}
               </div>
             </div>
-          )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  📚 Subject
+                </label>
+                <input
+                  type="text"
+                  name="subject"
+                  value={filters.subject}
+                  onChange={handleFilterChange}
+                  disabled={activeFilterMode === "url"}
+                  placeholder="Math, Science, English..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  📍 Location
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={filters.location}
+                  onChange={handleFilterChange}
+                  disabled={activeFilterMode === "url"}
+                  placeholder="City, Country..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  💰 Min Fee
+                </label>
+                <input
+                  type="number"
+                  name="minFee"
+                  value={filters.minFee}
+                  onChange={handleFilterChange}
+                  disabled={activeFilterMode === "url"}
+                  placeholder="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  💰 Max Fee
+                </label>
+                <input
+                  type="number"
+                  name="maxFee"
+                  value={filters.maxFee}
+                  onChange={handleFilterChange}
+                  disabled={activeFilterMode === "url"}
+                  placeholder="∞"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  🎓 Min Experience
+                </label>
+                <input
+                  type="number"
+                  name="experience"
+                  value={filters.experience}
+                  onChange={handleFilterChange}
+                  disabled={activeFilterMode === "url"}
+                  placeholder="Years"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                />
+              </div>
+
+              <div className="space-y-2 flex items-end">
+                <label className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    name="online"
+                    checked={filters.online}
+                    onChange={handleFilterChange}
+                    disabled={activeFilterMode === "url"}
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 disabled:opacity-50"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    🌐 Online Available
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
+
+        {/* Results */}
+        {displayedTeachers.length > 0 ? (
+          <div
+            className={
+              viewMode === "grid"
+                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                : "space-y-4"
+            }
+          >
+            {displayedTeachers.map((teacher) => (
+              <TeacherCard
+                key={teacher._id}
+                teacher={teacher}
+                viewMode={viewMode}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <div className="max-w-md mx-auto">
+              <div className="text-8xl mb-6">🔍</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                No tutors found
+              </h3>
+              <p className="text-gray-600 mb-8 leading-relaxed">
+                We couldn't find any tutors matching your criteria. Try
+                adjusting your filters or browse all available tutors.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={clearFilters}
+                  className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                >
+                  Clear Filters
+                </button>
+                <button
+                  onClick={resetToAll}
+                  className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  View All Tutors
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+};
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="flex-grow flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 mx-auto mb-6"></div>
+        <p className="text-gray-600 text-lg font-medium">Loading tutors...</p>
+        <p className="text-gray-500 text-sm mt-2">
+          Please wait while we fetch the best tutors for you
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+// Main component with Suspense boundary
+const TeachersPage = () => {
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Navbar />
+
+      <Suspense fallback={<LoadingFallback />}>
+        <TeachersContent />
+      </Suspense>
 
       <Footer />
     </div>
