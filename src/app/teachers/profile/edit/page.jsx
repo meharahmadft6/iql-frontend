@@ -328,32 +328,28 @@ const EditTeacherProfile = () => {
     try {
       const formDataToSend = new FormData();
 
-      // Append all fields except files
+      // Append all text fields
       for (const key in formData) {
+        if (key === "profilePhoto" || key === "existingProfilePhoto") continue;
+
         if (
           key === "subjects" ||
           key === "education" ||
           key === "experience" ||
           key === "languages"
         ) {
-          // Ensure languages is properly formatted
-          if (key === "languages") {
-            formDataToSend.append(key, JSON.stringify(formData[key]));
-          } else {
-            formDataToSend.append(key, JSON.stringify(formData[key]));
-          }
-        } else if (key === "profilePhoto") {
-          if (formData[key]) {
-            formDataToSend.append(key, formData[key]);
-          }
-        } else if (key !== "existingProfilePhoto") {
+          formDataToSend.append(key, JSON.stringify(formData[key]));
+        } else {
           formDataToSend.append(key, formData[key]);
         }
       }
 
-      // Add flag for existing profile photo
-      if (!formData.profilePhoto) {
-        formDataToSend.append("keepExistingProfilePhoto", "true");
+      // Always append profile photo (even if it's null/undefined)
+      if (formData.profilePhoto) {
+        formDataToSend.append("profilePhoto", formData.profilePhoto);
+      } else {
+        // Send a flag to indicate no new photo
+        formDataToSend.append("keepExistingPhoto", "true");
       }
 
       await updateTeacherProfile(teacher._id, formDataToSend);
@@ -364,7 +360,6 @@ const EditTeacherProfile = () => {
       setLoading(false);
     }
   };
-
   const languageOptions = [
     "English",
     "Urdu",

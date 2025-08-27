@@ -418,6 +418,7 @@ export default function DashboardLayout({ children, user }) {
   const handleLogout = () => {
     // Remove token from localStorage
     localStorage.removeItem("token");
+    localStorage.removeItem("userData");
     // Redirect to login page
     router.push("/");
   };
