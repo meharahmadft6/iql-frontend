@@ -14,7 +14,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function Home() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
@@ -36,8 +36,6 @@ export default function Home() {
             router.push("/dashboard");
           } else if (userData.role === "teacher") {
             router.push("/teachers");
-          } else if (userData.role === "student") {
-            router.push("/student-dashboard");
           }
         }
       } catch (error) {

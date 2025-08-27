@@ -52,10 +52,10 @@ export default function LoginPage() {
         } else {
           router.push("/teachers");
         }
-        break;  
+        break;
 
       case "student":
-        router.push("/students");
+        router.push("/request-a-teacher");
         break;
 
       default:
@@ -84,14 +84,30 @@ export default function LoginPage() {
         },
         body: JSON.stringify(formData),
       });
-      console.log("Response:", response);
 
       const data = await response.json();
 
+      // Handle different response statuses
       if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+        // Close the loading dialog first
+        Swal.close();
+
+        // Show error with backend message
+        Swal.fire({
+          icon: "error",
+          title: "Login Failed",
+          text:
+            data.message ||
+            data.error ||
+            "Invalid credentials. Please try again.",
+          confirmButtonColor: "#155dfc",
+        });
+
+        setLoading(false);
+        return; // Exit early on error
       }
 
+      // Success case
       // Save token and user data to localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem(
@@ -101,6 +117,7 @@ export default function LoginPage() {
           name: data.user.name,
           email: data.user.email,
           role: data.user.role,
+          isVerified: data.user.isVerified,
         })
       );
 
@@ -117,10 +134,16 @@ export default function LoginPage() {
         redirectBasedOnRole(data.user.role, data.profileExists);
       }, 1500);
     } catch (err) {
+      console.error("Login error:", err);
+
+      // Close loading dialog if it's still open
+      Swal.close();
+
+      // Show error message
       Swal.fire({
         icon: "error",
         title: "Login Failed",
-        text: err.message || "Invalid credentials. Please try again.",
+        text: err.message || "An unexpected error occurred. Please try again.",
         confirmButtonColor: "#155dfc",
       });
     } finally {

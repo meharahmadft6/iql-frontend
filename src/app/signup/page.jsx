@@ -63,10 +63,10 @@ export default function SignupPage() {
 
       Swal.fire({
         icon: "success",
-        title: "Account Created!",
-        text: `Welcome to Infinity Quotient Learning`,
+        title: "Account Created Successfully!",
+        text: "Welcome to Infinity Quotient Learning. Please check your email to verify your account before logging in.",
         showConfirmButton: false,
-        timer: 1500,
+        timer: 3000,
       });
 
       // Redirect after success
