@@ -5,53 +5,69 @@ import Link from "next/link";
 import {
   HomeIcon,
   UserCircleIcon,
-  BriefcaseIcon,
-  ChatAlt2Icon,
+  ClipboardDocumentListIcon,
+  AcademicCapIcon,
   CreditCardIcon,
+  StarIcon,
   ClockIcon,
   XCircleIcon,
   CheckCircleIcon,
   ChevronDownIcon,
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import {
-  ClipboardDocumentListIcon,
-  ChatBubbleLeftRightIcon,
-} from "@heroicons/react/24/outline";
-import { API } from "../../../api/api";
+import * as userApi from "../../../api/user.api";
 
 const DashboardLayout = ({ children, title = "Dashboard" }) => {
   const router = useRouter();
-  const [teachersData, setTeachersData] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [studentsStats, setStudentsStats] = useState({
+    totalPosts: 0,
+    walletCoins: 150,
+    tutorsApplied: 0,
+    activeTutors: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-
+  const [showVerificationAlert, setShowVerificationAlert] = useState(false);
   useEffect(() => {
-    const fetchTeachersProfile = async () => {
+    const fetchUserData = async () => {
       try {
-        const response = await API.get("/teachers/me");
+        const response = await userApi.getCurrentUser();
+        setUserData(response.data.data);
 
-        setTeachersData(response.data.data);
-
-        // Redirect if not approved
-        if (
-          !response.data.data.isApproved &&
-          router.pathname !== "/teachers/dashboard"
-        ) {
-          router.push("/teachers/dashboard");
-        }
+        // In a real app, you would fetch students-specific stats from an API
+        // For now, using mock data
+        setStudentsStats({
+          totalPosts: 5,
+          walletCoins: 150,
+          tutorsApplied: 12,
+          activeTutors: 3,
+        });
       } catch (error) {
-        console.error("Error fetching teachers profile:", error);
+        console.error("Error fetching user data:", error);
         router.push("/login");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTeachersProfile();
+    fetchUserData();
   }, [router]);
+
+  useEffect(() => {
+    // Check if alert was already shown
+    const alertShown = localStorage.getItem("verificationAlertShown");
+
+    if (!alertShown) {
+      // Show alert only once after login
+      setShowVerificationAlert(true);
+
+      // Save flag so it won't show again
+      localStorage.setItem("verificationAlertShown", "true");
+    }
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -72,6 +88,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("userData");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("verificationAlertShown");
 
     // Close dropdown
     setProfileDropdownOpen(false);
@@ -102,9 +119,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
         ></div>
         <div className="relative flex flex-col w-72 max-w-xs bg-white h-full">
           <div className="flex items-center justify-between px-4 py-5 border-b border-gray-200">
-            <div className="text-lg font-medium text-gray-900">
-              Teachers Dashboard
-            </div>
+            <div className="text-lg font-medium text-gray-900">Dashboard</div>
             <button
               type="button"
               className="text-gray-500 hover:text-gray-600"
@@ -116,61 +131,52 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
           </div>
           <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
             <NavItem
-              href="/teachers/dashboard"
+              href="/students/dashboard"
               icon={<HomeIcon className="h-5 w-5" />}
               text="Dashboard"
-              active={router.pathname === "/teachers/dashboard"}
+              active={router.pathname === "/students/dashboard"}
               mobile
             />
             <NavItem
-              href="/teachers/profile"
+              href="/students/profile"
               icon={<UserCircleIcon className="h-5 w-5" />}
               text="Profile"
-              active={router.pathname === "/teachers/profile"}
+              active={router.pathname === "/students/profile"}
               mobile
             />
-            {teachersData?.isApproved && (
+            {userData?.isVerified && (
               <>
                 <NavItem
-                  href="/teachers/jobs"
-                  icon={<BriefcaseIcon className="h-5 w-5" />}
-                  text="Browse Jobs"
-                  active={router.pathname === "/teachers/jobs"}
-                  mobile
-                />
-                <NavItem
-                  href="/teachers/applications"
+                  href="/students/myposts"
                   icon={<ClipboardDocumentListIcon className="h-5 w-5" />}
-                  text="My Applications"
-                  active={router.pathname === "/teachers/applications"}
+                  text="My Posts"
+                  active={router.pathname === "/students/myposts"}
                   mobile
                 />
                 <NavItem
-                  href="/teachers/chat"
-                  icon={<ChatBubbleLeftRightIcon className="h-5 w-5" />}
-                  text="Messages"
-                  active={router.pathname === "/teachers/chat"}
+                  href="/students/find-tutors"
+                  icon={<AcademicCapIcon className="h-5 w-5" />}
+                  text="Find Tutors"
+                  active={router.pathname === "/students/find-tutors"}
                   mobile
                 />
                 <NavItem
-                  href="/teachers/wallet"
+                  href="/students/wallet"
                   icon={<CreditCardIcon className="h-5 w-5" />}
                   text="Wallet"
-                  active={router.pathname === "/teachers/wallet"}
+                  active={router.pathname === "/students/wallet"}
+                  mobile
+                />
+                <NavItem
+                  href="/students/reviews"
+                  icon={<StarIcon className="h-5 w-5" />}
+                  text="Reviews"
+                  active={router.pathname === "/students/reviews"}
                   mobile
                 />
               </>
             )}
           </nav>
-          <div className="p-4 border-t border-gray-200">
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100"
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" />
-              Logout
-            </button>
-          </div>
         </div>
       </div>
 
@@ -189,55 +195,46 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
           <div className="flex flex-col flex-1 overflow-y-auto justify-center">
             <nav className="flex-1 px-3 py-6 space-y-2">
               <NavItem
-                href="/teachers/dashboard"
+                href="/students/dashboard"
                 icon={<HomeIcon className="h-6 w-6" />}
                 text="Dashboard"
-                active={router.pathname === "/teachers/dashboard"}
+                active={router.pathname === "/students/dashboard"}
               />
               <NavItem
-                href="/teachers/profile"
+                href="/students/profile"
                 icon={<UserCircleIcon className="h-6 w-6" />}
                 text="Profile"
-                active={router.pathname === "/teachers/profile"}
+                active={router.pathname === "/students/profile"}
               />
-              {teachersData?.isApproved && (
+              {userData?.isVerified && (
                 <>
                   <NavItem
-                    href="/teachers/jobs"
-                    icon={<BriefcaseIcon className="h-6 w-6" />}
-                    text="Browse Jobs"
-                    active={router.pathname === "/teachers/jobs"}
-                  />
-                  <NavItem
-                    href="/teachers/applications"
+                    href="/students/myposts"
                     icon={<ClipboardDocumentListIcon className="h-6 w-6" />}
-                    text="My Applications"
-                    active={router.pathname === "/teachers/applications"}
+                    text="My Posts"
+                    active={router.pathname === "/students/myposts"}
                   />
                   <NavItem
-                    href="/teachers/chat"
-                    icon={<ChatBubbleLeftRightIcon className="h-6 w-6" />}
-                    text="Messages"
-                    active={router.pathname === "/teachers/chat"}
+                    href="/students/find-tutors"
+                    icon={<AcademicCapIcon className="h-6 w-6" />}
+                    text="Find Tutors"
+                    active={router.pathname === "/students/find-tutors"}
                   />
                   <NavItem
-                    href="/teachers/wallet"
+                    href="/students/wallet"
                     icon={<CreditCardIcon className="h-6 w-6" />}
                     text="Wallet"
-                    active={router.pathname === "/teachers/wallet"}
+                    active={router.pathname === "/students/wallet"}
+                  />
+                  <NavItem
+                    href="/students/reviews"
+                    icon={<StarIcon className="h-6 w-6" />}
+                    text="Reviews"
+                    active={router.pathname === "/students/reviews"}
                   />
                 </>
               )}
             </nav>
-            <div className="p-4 border-t border-gray-200">
-              <button
-                onClick={handleLogout}
-                className="flex items-center w-full px-4 py-3 text-base font-medium text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
-              >
-                <ArrowRightOnRectangleIcon className="h-6 w-6 mr-3 group-hover:text-red-600 transition-colors" />
-                Logout
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -281,7 +278,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
             <div className="hidden sm:flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-full">
               <CreditCardIcon className="h-5 w-5 text-blue-600" />
               <span className="text-sm font-medium text-blue-700">
-                {teachersData?.wallet?.coins || 150} Connects
+                {studentsStats.walletCoins} Connects
               </span>
             </div>
 
@@ -289,7 +286,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
             <div className="sm:hidden flex items-center space-x-1 bg-blue-50 px-2 py-1 rounded-full">
               <CreditCardIcon className="h-4 w-4 text-blue-600" />
               <span className="text-xs font-medium text-blue-700">
-                {teachersData?.wallet?.coins || 150}
+                {studentsStats.walletCoins}
               </span>
             </div>
 
@@ -299,18 +296,22 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 className="flex items-center space-x-2 sm:space-x-3 p-1 rounded-full hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
-                <img
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-gray-200"
-                  src={teachersData?.profilePhotoUrl || "/default-avatar.png"}
-                  alt="Profile"
-                />
+                {userData?.profilePhotoUrl ? (
+                  <img
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-gray-200"
+                    src={userData.profilePhotoUrl}
+                    alt="Profile"
+                  />
+                ) : (
+                  <UserCircleIcon className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                )}
                 <div className="hidden sm:flex items-center space-x-1">
                   <div className="text-left">
                     <p className="text-sm font-medium text-gray-700 truncate max-w-32">
-                      {teachersData?.user?.name || "Teachers"}
+                      {userData?.name || "Students"}
                     </p>
                     <p className="text-xs text-gray-500 truncate max-w-32">
-                      {teachersData?.user?.email || "teachers@example.com"}
+                      {userData?.email || "students@example.com"}
                     </p>
                   </div>
                   <ChevronDownIcon
@@ -334,21 +335,21 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                     {/* Profile Info */}
                     <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center space-x-3">
-                        <img
-                          className="w-10 h-10 rounded-full object-cover"
-                          src={
-                            teachersData?.profilePhotoUrl ||
-                            "/default-avatar.png"
-                          }
-                          alt="Profile"
-                        />
+                        {userData?.profilePhotoUrl ? (
+                          <img
+                            className="w-10 h-10 rounded-full object-cover"
+                            src={userData.profilePhotoUrl}
+                            alt="Profile"
+                          />
+                        ) : (
+                          <UserCircleIcon className="w-10 h-10 text-gray-400" />
+                        )}{" "}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
-                            {teachersData?.user?.name || "Teachers"}
+                            {userData?.name || "Students"}
                           </p>
                           <p className="text-xs text-gray-500 truncate">
-                            {teachersData?.user?.email ||
-                              "teachers@example.com"}
+                            {userData?.email || "students@example.com"}
                           </p>
                         </div>
                       </div>
@@ -359,14 +360,14 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                       <div className="flex items-center space-x-2">
                         <CreditCardIcon className="h-4 w-4 text-blue-600" />
                         <span className="text-sm text-gray-700">
-                          {teachersData?.wallet?.coins || 150} Connects
+                          {studentsStats.walletCoins} Connects
                         </span>
                       </div>
                     </div>
 
                     {/* Menu Items */}
                     <Link
-                      href="/teachers/profile"
+                      href="/students/profile"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setProfileDropdownOpen(false)}
                     >
@@ -375,7 +376,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                     </Link>
 
                     <Link
-                      href="/teachers/wallet"
+                      href="/students/wallet"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setProfileDropdownOpen(false)}
                     >
@@ -400,35 +401,38 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
 
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
-          {!teachersData?.isApproved ? (
-            <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <ClockIcon className="h-5 w-5 text-yellow-400" />
+          {showVerificationAlert && (
+            <>
+              {!userData?.isVerified ? (
+                <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <ClockIcon className="h-5 w-5 text-yellow-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-yellow-700">
+                        Your account is not verified. Please verify your email
+                        to access all features.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm text-yellow-700">
-                    Your profile is under review. You'll have full access to the
-                    dashboard once approved by our team. This usually takes 1-2
-                    business days.
-                  </p>
+              ) : (
+                <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <CheckCircleIcon className="h-5 w-5 text-green-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-green-700">
+                        Your account has been verified! You now have full access
+                        to all features.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-5 w-5 text-green-400" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-green-700">
-                    Your profile has been approved! You now have full access to
-                    all features.
-                  </p>
-                </div>
-              </div>
-            </div>
+              )}
+            </>
           )}
           {children}
         </main>

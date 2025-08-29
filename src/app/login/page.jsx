@@ -55,7 +55,7 @@ export default function LoginPage() {
         break;
 
       case "student":
-        router.push("/request-a-teacher");
+        router.push("/students/dashboard");
         break;
 
       default:
@@ -110,16 +110,21 @@ export default function LoginPage() {
       // Success case
       // Save token and user data to localStorage
       localStorage.setItem("token", data.token);
-      localStorage.setItem(
-        "userData",
-        JSON.stringify({
-          id: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
-          role: data.user.role,
-          isVerified: data.user.isVerified,
-        })
-      );
+
+      const userData = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        isVerified: data.user.isVerified,
+      };
+
+      // If student, also store profileExists
+      if (data.user.role === "teacher") {
+        userData.profileExists = data.profileExists;
+      }
+
+      localStorage.setItem("userData", JSON.stringify(userData));
 
       Swal.fire({
         icon: "success",

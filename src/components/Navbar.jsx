@@ -113,15 +113,17 @@ export default function Navbar() {
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center space-x-4">
             <Link
               href="/login"
-              className="px-4 py-2 text-blue-600 font-medium rounded-full hover:bg-blue-50 transition-colors duration-300 hidden lg:block"
+              className="px-4 py-2 text-white bg-blue-500 font-medium rounded hover:bg-blue-600 transition-colors duration-300 hidden lg:block"
             >
               Login
             </Link>
+
             <Link
-              href="/signup"
-              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition-colors duration-300 shadow-sm"
+              href="/request-a-teacher"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="w-full px-4 py-2 rounded text-center bg-green-600 text-white font-medium  hover:bg-green-700 transition-colors"
             >
-              Sign Up
+              Request a tutor
             </Link>
           </div>
         </div>
@@ -271,6 +273,13 @@ export default function Navbar() {
                 className="w-full px-4 py-2 text-center bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition-colors"
               >
                 Sign Up
+              </Link>
+              <Link
+                href="/request-a-teacher"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full px-4 py-2 text-center bg-green-600 text-white font-medium rounded-full hover:bg-blue-700 transition-colors"
+              >
+                Request a tutor
               </Link>
             </div>
           </div>

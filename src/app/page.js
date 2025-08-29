@@ -31,11 +31,17 @@ export default function Home() {
         const userData = response?.data?.data;
 
         if (userData) {
-          // Redirect based on role
+          // Redirect based on role and profileExists
           if (userData.role === "admin") {
             router.push("/dashboard");
           } else if (userData.role === "teacher") {
-            router.push("/teachers");
+            if (userData.profileExists) {
+              router.push("/teachers/dashboard");
+            } else {
+              router.push("/teachers");
+            }
+          } else if (userData.role === "student") {
+            router.push("/student/dashboard");
           }
         }
       } catch (error) {

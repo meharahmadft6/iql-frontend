@@ -13,3 +13,17 @@ export const updatePostRequirement = (id, formData) =>
       "Content-Type": "multipart/form-data",
     },
   });
+
+export const getStudentPostRequirements = () => {
+  // Get user token from localStorage or context
+  const token = localStorage.getItem("token"); // or however you store the auth token
+
+  return API.get("/post-requirement/my-posts", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+};
+export const getPostRequirementById = (id) =>
+  API.get(`/post-requirement/${id}`);
