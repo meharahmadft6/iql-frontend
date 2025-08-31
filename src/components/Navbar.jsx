@@ -16,25 +16,24 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="w-full bg-[#f5f7f9] font-poppins">
+    <nav className="w-full bg-[#f5f7f9] font-poppins ">
       <div className="mx-auto bg-white shadow-sm px-6 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2 z-50 md:ms-10">
           <Image
             src="/infinity.jpg"
-            alt="Brainforce Logo"
+            alt="Infinity Logo"
             width={80}
             height={80}
           />
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex flex-1 justify-center relative">
+        <div className="hidden md:flex flex-1 justify-center-safe relative ">
           {/* Centered Links */}
           <div className="flex items-center space-x-10">
             {[
               { name: "Home", href: "/" },
-              { name: "Our Story", href: "/ourstory" },
               {
                 name: "Find Tutors",
                 dropdown: [
@@ -52,7 +51,6 @@ export default function Navbar() {
                   { name: "Home Tutor Jobs", href: "/jobs/home" },
                 ],
               },
-              { name: "Research", href: "/research" },
               { name: "Contact Us", href: "/contactus" },
             ].map((item) => (
               <div key={item.name} className="relative group">

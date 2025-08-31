@@ -4,6 +4,7 @@ import { createPostRequirement } from "../../api/postRequirement.api";
 import Swal from "sweetalert2";
 import Navbar from "../../components/NavbarProfile";
 import Footer from "../../components/Footer";
+import { useRouter } from "next/navigation";
 const RequestTeacherPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -17,7 +18,7 @@ const RequestTeacherPage = () => {
   const [countries, setCountries] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [errors, setErrors] = useState({});
-
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     name: "",
@@ -566,17 +567,49 @@ const RequestTeacherPage = () => {
       }
 
       const response = await createPostRequirement(submitData);
+      console.log("API Response:", response); // Debug log
 
+      // Check if response is successful - Axios puts data in response.data
       if (response.data?.success) {
+        const responseData = response.data;
+
+        // Check if response contains token (new user was created)
+        if (responseData.token) {
+          // New user was created - save token and user data to localStorage
+          localStorage.setItem("token", responseData.token);
+
+          const userDataToStore = {
+            id: responseData.user.id,
+            name: responseData.user.name,
+            email: responseData.user.email,
+            role: responseData.user.role,
+            isVerified: responseData.user.isVerified,
+          };
+
+          localStorage.setItem("userData", JSON.stringify(userDataToStore));
+
+          // If you're using an auth context, you might need to update it here
+          // For example, if you're using React Context:
+          // authContext.setAuthState({
+          //   isAuthenticated: true,
+          //   user: userDataToStore,
+          //   token: responseData.token
+          // });
+        }
+
         Swal.fire({
           icon: "success",
           title: "Request Submitted!",
-          text: isLoggedIn
-            ? "Your requirement has been posted successfully."
-            : "Account created and requirement submitted. Please check your email for verification.",
+          text:
+            responseData.message ||
+            (isLoggedIn
+              ? "Your requirement has been posted successfully."
+              : "Account created and requirement submitted. Please check your email for verification."),
           confirmButtonText: "OK",
           confirmButtonColor: "#2563eb",
         });
+
+        router.push("/students/dashboard");
       } else {
         throw new Error(response.data?.message || "Submission failed");
       }
@@ -588,6 +621,8 @@ const RequestTeacherPage = () => {
       // Extract error message from backend response if available
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+      } else if (error.response?.message) {
+        errorMessage = error.response.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -604,7 +639,6 @@ const RequestTeacherPage = () => {
       setLoading(false);
     }
   };
-
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
