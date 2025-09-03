@@ -66,9 +66,16 @@ export default function Navbar() {
               {
                 name: "Find Tutor Jobs",
                 dropdown: [
-                  { name: "All Tutor Jobs", href: "/jobs/all" },
-                  { name: "Online Tutor Jobs", href: "/jobs/online" },
-                  { name: "Home Tutor Jobs", href: "/jobs/home" },
+                  { name: "All Tutor Jobs", href: "/teaching-jobs" },
+                  { name: "Home Tutor Jobs", href: "/teaching-jobs/home" },
+                  {
+                    name: "Online Tutor Jobs",
+                    href: "/teaching-jobs/online-jobs",
+                  },
+                  {
+                    name: "Assignment Tutor Jobs",
+                    href: "/teaching-jobs/assignment-jobs",
+                  },
                 ],
               },
               { name: "Research", href: "/research" },

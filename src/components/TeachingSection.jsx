@@ -134,19 +134,19 @@ const TeachingSection = () => {
                   },
                   {
                     title: "Private Tutoring",
-                    href: "/home-teaching-jobs",
+                    href: "/teaching-jobs/home",
                     icon: <Users className="h-6 w-6 text-amber-600" />,
                     desc: "One-on-one teaching opportunities",
                   },
                   {
                     title: "Online Teaching",
-                    href: "/online-teaching-jobs",
+                    href: "/teaching-jobs/online-jobs",
                     icon: <Globe className="h-6 w-6 text-amber-600" />,
                     desc: "Teach remotely from anywhere",
                   },
                   {
                     title: "Academic Writing",
-                    href: "/assignment-jobs",
+                    href: "/teaching-jobs/assignment-jobs",
                     icon: <FileEdit className="h-6 w-6 text-amber-600" />,
                     desc: "Create educational content",
                   },

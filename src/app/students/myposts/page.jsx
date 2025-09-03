@@ -127,11 +127,22 @@ export default function MyPostsPage() {
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Posts</h1>
-            <p className="text-gray-600">
-              Manage your tutoring requirement posts ({posts.length} total)
-            </p>
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                My Posts
+              </h1>
+              <p className="text-gray-600">
+                Manage your tutoring requirement posts ({posts.length} total)
+              </p>
+            </div>
+
+            <Link
+              href="/students/myposts/create"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto text-center"
+            >
+              Create Post
+            </Link>
           </div>
 
           {/* Posts List */}
@@ -167,7 +178,7 @@ export default function MyPostsPage() {
                         <img
                           src={post.imageUrl}
                           alt="Post requirement"
-                          className="w-full h-48 md:h-full object-cover"
+                          className="w-full h-48 md:h-full object-fit-cover"
                         />
                       ) : (
                         <div className="w-full h-48 md:h-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -215,20 +226,24 @@ export default function MyPostsPage() {
                               className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               title="View Details"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-5 h-5" />
                             </Link>
-                            <button
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Edit Post"
+                            <Link
+                              href={`/students/myposts/create?id=${post._id}`}
                             >
-                              <Edit className="w-4 h-4" />
-                            </button>
+                              <button
+                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Post"
+                              >
+                                <Edit className="w-5 h-5" />
+                              </button>
+                            </Link>
                             <button
                               onClick={() => handleDelete(post._id)}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Delete Post"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-5 h-5" />
                             </button>
                           </div>
                         </div>

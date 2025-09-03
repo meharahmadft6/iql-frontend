@@ -41,7 +41,7 @@ export default function Home() {
               router.push("/teachers");
             }
           } else if (userData.role === "student") {
-            router.push("/student/dashboard");
+            router.push("/students/dashboard");
           }
         }
       } catch (error) {

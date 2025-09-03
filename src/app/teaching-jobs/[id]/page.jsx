@@ -1,30 +1,26 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import StudentDashboardLayout from "../../../layout/student/DashboardLayout";
-import { getStudentPostRequirements } from "../../../../api/postRequirement.api.js";
+import Navbar from "../../../components/Navbar";
+import Footer from "../../../components/Footer";
+import { getPostRequirementById } from "../../../api/postRequirement.api.js";
 import {
-  Edit,
-  Trash2,
-  ArrowLeft,
   MapPin,
-  Calendar,
   DollarSign,
   Clock,
   User,
-  Phone,
   Mail,
+  MessageSquare,
+  Phone,
   Globe,
   CheckCircle,
   AlertCircle,
   BookOpen,
 } from "lucide-react";
-import Link from "next/link";
-
+import Swal from "sweetalert2";
 export default function PostDetailPage() {
-  const params = useParams();
   const router = useRouter();
-  const { id } = params;
+  const { id } = useParams();
 
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,21 +28,16 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     if (id) {
-      fetchPost();
+      fetchPost(id);
     }
   }, [id]);
-
-  const fetchPost = async () => {
+  const fetchPost = async (postId) => {
     try {
       setLoading(true);
-      const response = await getStudentPostRequirements();
+      const response = await getPostRequirementById(postId);
+
       if (response.data.success) {
-        const foundPost = response.data.data.find((p) => p._id === id);
-        if (foundPost) {
-          setPost(foundPost);
-        } else {
-          setError("Post not found");
-        }
+        setPost(response.data.data); // API should already return the single post
       } else {
         setError("Failed to fetch post");
       }
@@ -58,20 +49,17 @@ export default function PostDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this post? This action cannot be undone."
-      )
-    ) {
-      try {
-        // Add your delete API call here
-        // await deletePost(post._id);
-        router.push("/students/myposts");
-      } catch (err) {
-        console.error("Error deleting post:", err);
+  const handleAction = (action) => {
+    Swal.fire({
+      title: "Login Required",
+      text: "Please login first to continue.",
+      icon: "warning",
+      confirmButtonText: "Login",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        router.push("/login");
       }
-    }
+    });
   };
 
   const formatDate = (dateString) => {
@@ -92,7 +80,7 @@ export default function PostDetailPage() {
 
   if (loading) {
     return (
-      <StudentDashboardLayout>
+      <Navbar>
         <div className="min-h-screen bg-gray-50 p-4">
           <div className="max-w-4xl mx-auto">
             <div className="animate-pulse">
@@ -105,47 +93,31 @@ export default function PostDetailPage() {
             </div>
           </div>
         </div>
-      </StudentDashboardLayout>
+      </Navbar>
     );
   }
 
   if (error || !post) {
     return (
-      <StudentDashboardLayout>
-        <div className="min-h-screen bg-gray-50 p-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-red-800 mb-2">Error</h2>
-              <p className="text-red-600 mb-4">{error}</p>
-              <Link
-                href="/students/myposts"
-                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Posts
-              </Link>
-            </div>
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Error</h2>
+            <p className="text-red-600 mb-4">{error}</p>
           </div>
         </div>
-      </StudentDashboardLayout>
+      </div>
     );
   }
 
   return (
-    <StudentDashboardLayout>
+    <>
+      <Navbar />
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <Link
-              href="/students/myposts"
-              className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              Back to My Posts
-            </Link>
-
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -175,22 +147,25 @@ export default function PostDetailPage() {
                   </span>
                 </div>
               </div>
-
               <div className="flex gap-2">
-                <Link href={`/students/myposts/create?id=${id}`}>
-                  <button className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </button>
-                </Link>
+                {/* Message Button */}
                 <button
-                  onClick={handleDelete}
-                  className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  onClick={() => handleAction("message")}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Message
                 </button>
-              </div>
+
+                {/* View Phone Button */}
+                <button
+                  onClick={() => handleAction("phone")}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  View Phone Number
+                </button>
+              </div>{" "}
             </div>
           </div>
 
@@ -379,25 +354,9 @@ export default function PostDetailPage() {
               </div>
             </div>
           </div>
-
-          {/* Mobile Action Bar (visible only on small screens) */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 sm:hidden">
-            <div className="flex gap-2 max-w-4xl mx-auto">
-              <button className="flex-1 flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </button>
-            </div>
-          </div>
         </div>
       </div>
-    </StudentDashboardLayout>
+      <Footer />
+    </>
   );
 }

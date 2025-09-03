@@ -108,7 +108,7 @@ const Footer = () => {
                 { name: "Home", href: "/" },
                 { name: "Our Story", href: "/ourstory" },
                 { name: "Research", href: "/research" },
-                { name: "Contact Us", href: "/contactus" },
+                { name: "Contact Us", href: "/contact" },
               ].map((link) => (
                 <div key={link.name} className="group">
                   <Link
@@ -133,8 +133,8 @@ const Footer = () => {
             <div className="space-y-4">
               {[
                 { name: "Find Tutors", href: "/tutors" },
-                { name: "Become a Tutor", href: "/become-tutor" },
-                { name: "Tutor Resources", href: "/tutor-resources" },
+                { name: "Request a Tutor", href: "/request-a-teacher" },
+                { name: "Become a Tutor", href: "/signup" },
                 { name: "Teaching Jobs", href: "/teaching-jobs" },
               ].map((link) => (
                 <div key={link.name} className="group">
@@ -171,10 +171,10 @@ const Footer = () => {
                   <FaEnvelope />
                 </div>
                 <Link
-                  href="mailto:info@example.com"
+                  href="mailto:info@infinityquotientlearning.com"
                   className="text-lg hover:text-blue-600 transition-colors duration-300"
                 >
-                  info@example.com
+                  info@infinityquotientlearning.com
                 </Link>
               </div>
               <div className="flex items-center space-x-4 group">
