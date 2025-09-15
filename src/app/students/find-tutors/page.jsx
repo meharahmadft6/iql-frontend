@@ -182,7 +182,7 @@ const TeachersPage = () => {
 
           {/* Teachers Grid */}
           {filteredTeachers.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1  gap-4 sm:gap-6">
               {filteredTeachers.map((teacher) => (
                 <div
                   key={teacher._id}
@@ -191,25 +191,17 @@ const TeachersPage = () => {
                   {/* Card Content */}
                   <div className="p-4 sm:p-6">
                     {/* Header */}
-                    <div className="flex items-start space-x-3 sm:space-x-4 mb-4">
-                      <div className="flex-shrink-0">
-                        {teacher.profilePhotoUrl ? (
-                          <img
-                            src={teacher.profilePhotoUrl}
-                            alt={teacher.user.name}
-                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-100"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm sm:text-xl">
-                            {teacher.user.name.charAt(0)}
-                          </div>
-                        )}
-                      </div>
+                    <div className="flex items-start space-x-3 sm:space-x-4 mb-4 ">
                       <div className="flex-grow min-w-0">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                          {teacher.user.name}
-                        </h3>
-                        <p className="text-indigo-600 font-medium text-xs sm:text-sm">
+                        <Link
+                          href={`/students/find-tutors/${teacher._id}`}
+                          passHref
+                        >
+                          <h3 className="text-3xl font-semibold text-blue-800 truncate hover:underline cursor-pointer">
+                            {teacher.user.name}
+                          </h3>
+                        </Link>
+                        <p className="text-indigo-600 font-medium text-xs sm:text-sm mt-3">
                           {teacher.speciality}
                         </p>
                         <div className="flex items-center mt-1">
@@ -229,10 +221,10 @@ const TeachersPage = () => {
                     <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
                       <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
                         <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
-                          Fee
+                          Fee Details
                         </p>
                         <p className="text-xs sm:text-sm font-semibold text-gray-900 mt-1">
-                          {teacher.fee} {teacher.feeDetails}
+                          {teacher.feeDetails}
                         </p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
@@ -248,8 +240,8 @@ const TeachersPage = () => {
                     {/* Online Availability Badge */}
                     {teacher.availableForOnline && (
                       <div className="mb-4">
-                        <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          🌐 Available Online
+                        <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-blue-500 text-white">
+                          Available Online
                         </span>
                       </div>
                     )}
@@ -275,16 +267,6 @@ const TeachersPage = () => {
                         )}
                       </div>
                     </div>
-
-                    {/* View Profile Button */}
-                    <Link
-                      href={`/students/find-tutors/${teacher._id}`}
-                      passHref
-                    >
-                      <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2.5 sm:py-3 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:transform-none">
-                        View Profile
-                      </button>
-                    </Link>
                   </div>
                 </div>
               ))}

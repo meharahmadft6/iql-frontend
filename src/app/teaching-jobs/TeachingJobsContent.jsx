@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense, useRef } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -23,11 +23,14 @@ import {
   SortAsc,
   ChevronLeft,
   ChevronRight,
+  X,
+  Crosshair,
 } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 
 import { getAllPostRequirements } from "../../api/postRequirement.api";
+import { getSubjects } from "../../api/subject.api"; // Import subjects API
 
 // Create a separate component for the main content
 const PostRequirementsContent = () => {
@@ -41,10 +44,23 @@ const PostRequirementsContent = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [pagination, setPagination] = useState({});
+
+  // Suggestions state
+  const [subjects, setSubjects] = useState([]);
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [subjectSuggestions, setSubjectSuggestions] = useState([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [showSubjectSuggestions, setShowSubjectSuggestions] = useState(false);
+  const [isGeolocating, setIsGeolocating] = useState(false);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+
+  const subjectInputRef = useRef(null);
+  const locationInputRef = useRef(null);
+  const GEOAPIFY_KEY = "216ee53519b343a5be36cba1a2fa6ed6";
 
   const [filters, setFilters] = useState({
     subject: "",
@@ -57,12 +73,110 @@ const PostRequirementsContent = () => {
     language: "",
   });
 
+  // Fetch subjects on component mount
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      setIsLoadingSubjects(true);
+      try {
+        const response = await getSubjects();
+        if (response.data.success) {
+          setSubjects(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      } finally {
+        setIsLoadingSubjects(false);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
+
+  // Filter subjects based on input
+  useEffect(() => {
+    if (filters.subject.length > 1) {
+      const searchTerm = filters.subject.toLowerCase();
+      const filtered = subjects.filter(
+        (subj) =>
+          subj.name.toLowerCase().includes(searchTerm) ||
+          subj.category.toLowerCase().includes(searchTerm) ||
+          subj.level.toLowerCase().includes(searchTerm)
+      );
+      setSubjectSuggestions(filtered);
+    } else {
+      setSubjectSuggestions([]);
+    }
+  }, [filters.subject, subjects]);
+
+  // Fetch location suggestions from Geoapify
+  const fetchLocationSuggestions = async (query) => {
+    if (query.length < 3) {
+      setLocationSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
+          query
+        )}&apiKey=${GEOAPIFY_KEY}&limit=5`
+      );
+      const data = await response.json();
+      setLocationSuggestions(data.features || []);
+    } catch (error) {
+      console.error("Error fetching location suggestions:", error);
+    }
+  };
+
+  // Get current location
+  const getCurrentLocation = () => {
+    setIsGeolocating(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const response = await fetch(
+              `https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&apiKey=${GEOAPIFY_KEY}`
+            );
+            const data = await response.json();
+            if (data.features && data.features.length > 0) {
+              setFilters((prev) => ({
+                ...prev,
+                location: data.features[0].properties.formatted,
+              }));
+            }
+            setIsGeolocating(false);
+          } catch (error) {
+            console.error("Error getting location:", error);
+            setIsGeolocating(false);
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setIsGeolocating(false);
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by this browser.");
+      setIsGeolocating(false);
+    }
+  };
+
+  useEffect(() => {
+    if (filters.location.length > 1) {
+      const timer = setTimeout(() => {
+        fetchLocationSuggestions(filters.location);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [filters.location]);
+
   // Fetch all post requirements with pagination
-  const fetchAllPosts = async (page = 1, limit = 10) => {
+  const fetchAllPosts = async (page = 1, limit = 15) => {
     try {
       setLoading(true);
       const res = await getAllPostRequirements(page, limit);
-      console.log("API Response:", res.data);
 
       const postsData = res.data.data || [];
       setAllPosts(postsData);
@@ -70,12 +184,6 @@ const PostRequirementsContent = () => {
       setTotalItems(res.data.total || 0);
       setTotalPages(res.data.totalPages || 0);
       setPagination(res.data.pagination || {});
-
-      console.log("Pagination data:", res.data.pagination);
-      console.log("Total items:", res.data.total);
-      console.log("Total pages:", res.data.totalPages);
-      console.log("Current page:", page);
-      console.log("Items per page:", limit);
     } catch (err) {
       setError(
         err.response?.data?.message || "Failed to fetch post requirements"
@@ -98,13 +206,12 @@ const PostRequirementsContent = () => {
   const handlePageChange = (newPage) => {
     if (newPage > 0 && newPage <= totalPages) {
       setCurrentPage(newPage);
-      window.scrollTo(0, 0); // Scroll to top when page changes
+      window.scrollTo(0, 0);
     }
   };
 
   // Apply filters
   const applyFilters = useCallback(() => {
-    // Ensure allPosts is an array before spreading
     let result = Array.isArray(allPosts) ? [...allPosts] : [];
 
     if (filters.subject) {
@@ -224,13 +331,27 @@ const PostRequirementsContent = () => {
     setDisplayedPosts(allPosts);
   };
 
+  // Clear individual field
+  const clearSubject = () => {
+    setFilters((prev) => ({ ...prev, subject: "" }));
+    setSubjectSuggestions([]);
+    subjectInputRef.current?.focus();
+  };
+
+  const clearLocation = () => {
+    setFilters((prev) => ({ ...prev, location: "" }));
+    setLocationSuggestions([]);
+    locationInputRef.current?.focus();
+  };
+
   // Pagination component
   const PaginationControls = () => {
     if (totalPages <= 1) return null;
 
     return (
-      <div className="flex items-center justify-between mt-8 px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center gap-2 text-sm text-gray-700">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-8 px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 gap-4">
+        {/* Results Info */}
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700 justify-center md:justify-start">
           <span>Showing </span>
           <span className="font-medium">
             {(currentPage - 1) * itemsPerPage + 1}
@@ -244,14 +365,16 @@ const PostRequirementsContent = () => {
           <span> results</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Pagination Controls */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 justify-center ">
+          {/* Per Page Dropdown */}
           <select
             value={itemsPerPage}
             onChange={(e) => {
               setItemsPerPage(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+            className="border border-gray-300 rounded-md px-2 py-1 text-sm hidden lg:block"
           >
             <option value="10">10 per page</option>
             <option value="15">15 per page</option>
@@ -259,7 +382,8 @@ const PostRequirementsContent = () => {
             <option value="50">50 per page</option>
           </select>
 
-          <div className="flex items-center gap-1">
+          {/* Page Numbers */}
+          <div className="flex flex-wrap items-center gap-1 justify-center">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
@@ -269,9 +393,8 @@ const PostRequirementsContent = () => {
             </button>
 
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              // Show pages around current page
               let pageNum;
-              if (totalPages <= 5) {
+              if (totalPages <= 4) {
                 pageNum = i + 1;
               } else if (currentPage <= 3) {
                 pageNum = i + 1;
@@ -389,79 +512,205 @@ const PostRequirementsContent = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8 lg:px-12">
-        {/* Action Bar */}
+        {/* Enhanced Action Bar with Suggestions */}
         <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            {/* Left Side - Search Filters */}
-            <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full lg:w-auto">
-              {/* Subject Search */}
-              <input
-                type="text"
-                name="subject"
-                value={filters.subject}
-                onChange={handleFilterChange}
-                placeholder="Search by Subject"
-                className="w-full sm:w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-
-              {/* Location Search */}
-              <input
-                type="text"
-                name="location"
-                value={filters.location}
-                onChange={handleFilterChange}
-                placeholder="Search by Location"
-                className="w-full sm:w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-
-              {/* Clear Filters Button (optional) */}
-              {(filters.subject || filters.location) && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm px-3 py-2 rounded-lg border border-gray-300 bg-gray-100 hover:bg-gray-200"
+          <div className="flex flex-col gap-6">
+            {/* Primary Search Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Subject Search with Suggestions */}
+              <div className="relative">
+                <label
+                  htmlFor="subject"
+                  className="block text-sm font-semibold text-gray-800 mb-2"
                 >
-                  Clear
-                </button>
-              )}
+                  Search by Subject
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-500" />
+                  </div>
+                  <input
+                    ref={subjectInputRef}
+                    type="text"
+                    name="subject"
+                    value={filters.subject}
+                    onChange={(e) => {
+                      handleFilterChange(e);
+                      setShowSubjectSuggestions(true);
+                    }}
+                    onFocus={() => setShowSubjectSuggestions(true)}
+                    onBlur={() =>
+                      setTimeout(() => setShowSubjectSuggestions(false), 200)
+                    }
+                    placeholder="e.g. Mathematics, Python, Guitar, IGCSE, A-Level"
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:text-gray-500"
+                    autoComplete="off"
+                  />
+                  {filters.subject && (
+                    <button
+                      type="button"
+                      onClick={clearSubject}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    </button>
+                  )}
+                  {showSubjectSuggestions && subjectSuggestions.length > 0 && (
+                    <ul className="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                      {subjectSuggestions.map((suggestion) => (
+                        <li
+                          key={suggestion._id}
+                          className="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-gray-800 border-b border-gray-100 last:border-b-0"
+                          onClick={() => {
+                            setFilters((prev) => ({
+                              ...prev,
+                              subject: suggestion.name,
+                            }));
+                            setShowSubjectSuggestions(false);
+                          }}
+                        >
+                          <div className="font-medium">{suggestion.name}</div>
+                          <div className="text-sm text-gray-600 flex justify-between mt-1">
+                            <span>{suggestion.category}</span>
+                            <span className="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                              {suggestion.level}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              {/* Location Search with Suggestions */}
+              <div className="relative">
+                <div className="flex justify-between items-center mb-2">
+                  <label
+                    htmlFor="location"
+                    className="block text-sm font-semibold text-gray-800"
+                  >
+                    Search by Location
+                  </label>
+                  <button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    className="text-xs flex items-center text-indigo-700 hover:underline"
+                    disabled={isGeolocating}
+                  >
+                    <Crosshair className="mr-1 h-3 w-3" />
+                    {isGeolocating ? "Detecting..." : "Use my location"}
+                  </button>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MapPin className="h-5 w-5 text-gray-500" />
+                  </div>
+                  <input
+                    ref={locationInputRef}
+                    type="text"
+                    name="location"
+                    value={filters.location}
+                    onChange={(e) => {
+                      handleFilterChange(e);
+                      setShowLocationSuggestions(true);
+                    }}
+                    onFocus={() => setShowLocationSuggestions(true)}
+                    onBlur={() =>
+                      setTimeout(() => setShowLocationSuggestions(false), 200)
+                    }
+                    placeholder="City or Postal Code"
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:text-gray-500"
+                    autoComplete="off"
+                  />
+                  {filters.location && (
+                    <button
+                      type="button"
+                      onClick={clearLocation}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    </button>
+                  )}
+                  {showLocationSuggestions &&
+                    locationSuggestions.length > 0 && (
+                      <ul className="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                        {locationSuggestions.map((suggestion) => (
+                          <li
+                            key={suggestion.properties.place_id}
+                            className="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-gray-800 border-b border-gray-100 last:border-b-0"
+                            onClick={() => {
+                              setFilters((prev) => ({
+                                ...prev,
+                                location: suggestion.properties.formatted,
+                              }));
+                              setShowLocationSuggestions(false);
+                            }}
+                          >
+                            {suggestion.properties.formatted}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                </div>
+              </div>
             </div>
 
-            {/* Right Side - View Controls */}
-            <div className="flex items-center gap-4">
-              {/* Sort Dropdown */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="budget_high">Budget: High to Low</option>
-                <option value="budget_low">Budget: Low to High</option>
-                <option value="name">Sort by Name</option>
-              </select>
+            {/* Secondary Controls */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200">
+              {/* Clear Filters */}
+              <div className="flex items-center gap-3">
+                {(filters.subject ||
+                  filters.location ||
+                  filters.minBudget ||
+                  filters.maxBudget) && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-sm px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    Clear All Filters
+                  </button>
+                )}
+              </div>
 
-              {/* View Mode Toggle */}
-              <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 transition-colors ${
-                    viewMode === "grid"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
-                  }`}
+              {/* Right Side Controls */}
+              <div className="flex items-center gap-4">
+                {/* Sort Dropdown */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
-                  <Grid3X3 className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 transition-colors ${
-                    viewMode === "list"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="budget_high">Budget: High to Low</option>
+                  <option value="budget_low">Budget: Low to High</option>
+                  <option value="name">Sort by Name</option>
+                </select>
+
+                {/* View Mode Toggle */}
+                <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`p-2 transition-colors ${
+                      viewMode === "grid"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Grid3X3 className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`p-2 transition-colors ${
+                      viewMode === "list"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <List className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -517,7 +766,6 @@ const PostRequirementsContent = () => {
     </main>
   );
 };
-
 // Loading fallback component
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col bg-gray-50">

@@ -57,7 +57,7 @@ const PostRequirementsContent = () => {
   });
 
   // Fetch all post requirements with pagination
-  const fetchAllPosts = async (page = 1, limit = 10) => {   
+  const fetchAllPosts = async (page = 1, limit = 10) => {
     try {
       setLoading(true);
       const res = await getAllAssignmentPostRequirements(page, limit);
@@ -227,8 +227,9 @@ const PostRequirementsContent = () => {
     if (totalPages <= 1) return null;
 
     return (
-      <div className="flex items-center justify-between mt-8 px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center gap-2 text-sm text-gray-700">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-8 px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 gap-4">
+        {/* Results Info */}
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700 justify-center md:justify-start">
           <span>Showing </span>
           <span className="font-medium">
             {(currentPage - 1) * itemsPerPage + 1}
@@ -242,14 +243,16 @@ const PostRequirementsContent = () => {
           <span> results</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Pagination Controls */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 justify-center ">
+          {/* Per Page Dropdown */}
           <select
             value={itemsPerPage}
             onChange={(e) => {
               setItemsPerPage(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+            className="border border-gray-300 rounded-md px-2 py-1 text-sm hidden lg:block"
           >
             <option value="10">10 per page</option>
             <option value="15">15 per page</option>
@@ -257,7 +260,8 @@ const PostRequirementsContent = () => {
             <option value="50">50 per page</option>
           </select>
 
-          <div className="flex items-center gap-1">
+          {/* Page Numbers */}
+          <div className="flex flex-wrap items-center gap-1 justify-center">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
@@ -267,9 +271,8 @@ const PostRequirementsContent = () => {
             </button>
 
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              // Show pages around current page
               let pageNum;
-              if (totalPages <= 5) {
+              if (totalPages <= 4) {
                 pageNum = i + 1;
               } else if (currentPage <= 3) {
                 pageNum = i + 1;

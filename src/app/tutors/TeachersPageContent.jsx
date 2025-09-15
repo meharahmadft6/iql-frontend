@@ -8,7 +8,7 @@ import {
   getFilteredTeachers,
 } from "../../api/teacher.api";
 import { useSearchParams } from "next/navigation";
-
+import { SearchX } from "lucide-react";
 // Create a separate component that uses useSearchParams
 const TeachersContent = () => {
   const searchParams = useSearchParams();
@@ -19,7 +19,7 @@ const TeachersContent = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilterMode, setActiveFilterMode] = useState("all"); // 'all', 'url', 'filters'
   const [sortBy, setSortBy] = useState("name"); // New sorting functionality
-  const [viewMode, setViewMode] = useState("grid"); // grid or list view
+  const [viewMode, setViewMode] = useState("list"); // grid or list view
 
   const [filters, setFilters] = useState({
     subject: "",
@@ -237,19 +237,22 @@ const TeachersContent = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="min-h-96 flex flex-col bg-gray-50">
         <div className="flex-grow flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto p-8">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Oops! Something went wrong
+          <div className="text-center max-w-3xl mx-auto p-8">
+            <SearchX className="mx-auto text-gray-400 w-16 h-16 mb-4" />
+            <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3">
+              No Teachers Found
             </h2>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <p className="text-gray-600 mb-6 text-xl ">
+              Currently, no teachers are available for the selected subject or
+              location. Stay tuned — new tutors are joining soon!
+            </p>
             <button
               onClick={() => window.location.reload()}
               className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
             >
-              Try Again
+              Refresh
             </button>
           </div>
         </div>
@@ -549,90 +552,94 @@ const TeachersPage = () => {
 const TeacherCard = ({ teacher, viewMode }) => {
   if (viewMode === "list") {
     return (
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 p-6">
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Profile Section */}
-          <div className="flex items-start gap-4 md:w-1/3">
-            <div className="flex-shrink-0">
-              {teacher.profilePhotoUrl ? (
-                <img
-                  src={teacher.profilePhotoUrl}
-                  alt={teacher.user.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-gray-100"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
-                  {teacher.user.name.charAt(0)}
-                </div>
-              )}
-            </div>
-            <div className="flex-grow">
-              <h3 className="text-xl font-bold text-gray-900 mb-1">
+      <div className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 p-6 md:p-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <Link href={`/tutors/${teacher._id}`} passHref>
+              <h2 className="text-2xl font-extrabold text-gray-900 hover:underline">
                 {teacher.user.name}
-              </h3>
-              <p className="text-indigo-600 font-semibold mb-2">
-                {teacher.speciality}
-              </p>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>📍 {teacher.location}</span>
-                {teacher.availableForOnline && (
-                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                    🌐 Online
-                  </span>
-                )}
-              </div>
-            </div>
+              </h2>
+            </Link>
+            <p className="text-lg text-indigo-600 font-semibold">
+              {teacher.currentRole || teacher.speciality}
+            </p>
           </div>
+        </div>
 
-          {/* Details Section */}
-          <div className="md:w-1/3">
-            <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+        {/* Main Details */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Left Section */}
+          <div>
+            <div className="flex items-center gap-2 text-gray-600 text-sm mb-3">
+              <svg
+                className="w-4 h-4 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              {teacher.location}
+            </div>
+
+            {teacher.availableForOnline && (
+              <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium mb-4">
+                🌐 Available Online
+              </span>
+            )}
+
+            <p className="text-gray-700 text-sm leading-relaxed mb-4">
               {teacher.profileDescription}
             </p>
 
-            <div className="flex flex-wrap gap-2 mb-4">
+            {/* Subjects */}
+            <div className="flex flex-wrap gap-2">
               {teacher.subjects.slice(0, 4).map((subject, idx) => (
                 <span
                   key={idx}
-                  className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full border border-blue-200"
+                  className="bg-blue-50 text-blue-700 text-xs px-3 py-1.5 rounded-full border border-blue-200 font-medium"
                 >
                   {subject.name}
                 </span>
               ))}
               {teacher.subjects.length > 4 && (
-                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
+                <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1.5 rounded-full font-medium">
                   +{teacher.subjects.length - 4}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Stats & Action Section */}
-          <div className="md:w-1/3">
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">
-                  {teacher.fee} {teacher.feeDetails}
-                </p>
+          {/* Right Section (Stats) */}
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-lg font-bold text-gray-900">{teacher.fee}</p>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">
-                  Fee
+                  Fee / hour
                 </p>
               </div>
-              <div className="text-center">
+              <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-lg font-bold text-gray-900">
-                  {teacher.totalExperience} years
+                  {teacher.totalExperience}+
                 </p>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">
-                  Experience
+                  Years Experience
                 </p>
               </div>
             </div>
-
-            <Link href={`/tutors/${teacher._id}`} passHref>
-              <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg">
-                View Profile →
-              </button>
-            </Link>
           </div>
         </div>
       </div>
@@ -645,19 +652,6 @@ const TeacherCard = ({ teacher, viewMode }) => {
       <div className="p-6">
         {/* Header */}
         <div className="flex items-start gap-4 mb-4">
-          <div className="flex-shrink-0">
-            {teacher.profilePhotoUrl ? (
-              <img
-                src={teacher.profilePhotoUrl}
-                alt={teacher.user.name}
-                className="w-16 h-16 rounded-full object-cover border-2 border-gray-100 group-hover:border-indigo-200 transition-colors"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl group-hover:from-indigo-600 group-hover:to-purple-700 transition-colors">
-                {teacher.user.name.charAt(0)}
-              </div>
-            )}
-          </div>
           <div className="flex-grow min-w-0">
             <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-indigo-900 transition-colors">
               {teacher.user.name}

@@ -241,14 +241,6 @@ function Header({ user, onLogout }) {
         <span className="sr-only">Toggle Sidebar</span>
       </button>
 
-      {isMobile && (
-        <Link href="/" className="ml-2 max-[430px]:hidden min-[375px]:ml-4">
-          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-            <span className="text-white font-bold">IQ</span>
-          </div>
-        </Link>
-      )}
-
       <div className="max-xl:hidden">
         <h1 className="mb-1 text-2xl font-bold text-gray-800">Dashboard</h1>
         <p className="font-medium text-gray-600">Admin Dashboard Solution</p>
@@ -274,8 +266,8 @@ function Sidebar({ user }) {
     { icon: Users, label: "Teachers", href: "/dashboard/teachers" },
     { icon: GraduationCap, label: "Students", href: "/dashboard/students" },
     { icon: BookOpen, label: "Courses", href: "/dashboard/courses" },
+    { icon: BookOpen, label: "Subjects", href: "/dashboard/subjects" },
     { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
-    { icon: Bell, label: "Notifications", href: "/dashboard/notifications" },
     { icon: Settings, label: "Settings", href: "/dashboard/settings" },
   ];
 

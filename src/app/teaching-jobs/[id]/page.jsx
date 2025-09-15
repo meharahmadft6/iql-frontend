@@ -231,16 +231,6 @@ export default function PostDetailPage() {
                       <CheckCircle className="w-4 h-4 ml-2 text-green-500" />
                     )}
                   </div>
-                  <div className="flex items-center">
-                    <Mail className="w-4 h-4 mr-3 text-gray-400" />
-                    <span className="text-gray-700">{post.user.email}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone className="w-4 h-4 mr-3 text-gray-400" />
-                    <span className="text-gray-700">
-                      {post.phone.countryCode} {post.phone.number}
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>

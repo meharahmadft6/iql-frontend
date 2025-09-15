@@ -1,16 +1,59 @@
 "use client";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { FiSearch, FiMapPin, FiCrosshair } from "react-icons/fi";
+import { useState, useEffect, useRef } from "react";
+import { FiSearch, FiMapPin, FiCrosshair, FiX } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import { getSubjects } from "../api/subject.api"; // Import the subjects API
+
 export default function HeroSection() {
   const [subject, setSubject] = useState("");
   const [location, setLocation] = useState("");
   const [locationSuggestions, setLocationSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [subjectSuggestions, setSubjectSuggestions] = useState([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [showSubjectSuggestions, setShowSubjectSuggestions] = useState(false);
   const [isGeolocating, setIsGeolocating] = useState(false);
+  const [subjects, setSubjects] = useState([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const subjectInputRef = useRef(null);
   const router = useRouter();
   const GEOAPIFY_KEY = "216ee53519b343a5be36cba1a2fa6ed6";
+
+  // Fetch subjects on component mount
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      setIsLoadingSubjects(true);
+      try {
+        const response = await getSubjects();
+        console.log("subjects", response.data.data);
+        if (response.data.success) {
+          setSubjects(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      } finally {
+        setIsLoadingSubjects(false);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
+
+  // Filter subjects based on input across name, category, and level
+  useEffect(() => {
+    if (subject.length > 1) {
+      const searchTerm = subject.toLowerCase();
+      const filtered = subjects.filter(
+        (subj) =>
+          subj.name.toLowerCase().includes(searchTerm) ||
+          subj.category.toLowerCase().includes(searchTerm) ||
+          subj.level.toLowerCase().includes(searchTerm)
+      );
+      setSubjectSuggestions(filtered);
+    } else {
+      setSubjectSuggestions([]);
+    }
+  }, [subject, subjects]);
 
   // Fetch location suggestions from Geoapify Autocomplete API
   const fetchLocationSuggestions = async (query) => {
@@ -66,7 +109,7 @@ export default function HeroSection() {
   };
 
   useEffect(() => {
-    if (location.length > 2) {
+    if (location.length > 1) {
       const timer = setTimeout(() => {
         fetchLocationSuggestions(location);
       }, 300);
@@ -97,6 +140,13 @@ export default function HeroSection() {
 
     // Redirect to tutors page with query params
     router.push(`/tutors?${queryParams.toString()}`);
+  };
+
+  // Clear subject input
+  const clearSubject = () => {
+    setSubject("");
+    setSubjectSuggestions([]);
+    subjectInputRef.current?.focus();
   };
 
   return (
@@ -132,7 +182,7 @@ export default function HeroSection() {
               className="space-y-4 md:space-y-0 md:flex md:items-end md:space-x-4"
             >
               {/* Subject Input */}
-              <div className="flex-1">
+              <div className="flex-1 relative">
                 <label
                   htmlFor="subject"
                   className="block text-sm font-semibold text-gray-800 mb-1"
@@ -144,13 +194,53 @@ export default function HeroSection() {
                     <FiSearch className="h-5 w-5 text-gray-500" />
                   </div>
                   <input
+                    ref={subjectInputRef}
                     type="text"
                     id="subject"
                     value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g. Mathematics, Python, Guitar"
-                    className="block w-full pl-10 pr-3 py-3 bg-white text-black border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 sm:text-sm"
+                    onChange={(e) => {
+                      setSubject(e.target.value);
+                      setShowSubjectSuggestions(true);
+                    }}
+                    onFocus={() => setShowSubjectSuggestions(true)}
+                    onBlur={() =>
+                      setTimeout(() => setShowSubjectSuggestions(false), 200)
+                    }
+                    placeholder="e.g. Mathematics, Python, Guitar, IGCSE, A-Level"
+                    className="block w-full pl-10 pr-10 py-3 bg-white text-black border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 sm:text-sm"
+                    autoComplete="off"
                   />
+                  {subject && (
+                    <button
+                      type="button"
+                      onClick={clearSubject}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      <FiX className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    </button>
+                  )}
+                  {showSubjectSuggestions && subjectSuggestions.length > 0 && (
+                    <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                      {subjectSuggestions.map((suggestion) => (
+                        <li
+                          key={suggestion._id}
+                          className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-gray-800 border-b border-gray-100 last:border-b-0"
+                          onClick={() => {
+                            setSubject(suggestion.name);
+                            setShowSubjectSuggestions(false);
+                          }}
+                        >
+                          <div className="font-medium">{suggestion.name}</div>
+                          <div className="text-sm text-gray-600 flex justify-between mt-1">
+                            <span>{suggestion.category}</span>
+                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                              {suggestion.level}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
 
@@ -183,31 +273,33 @@ export default function HeroSection() {
                     value={location}
                     onChange={(e) => {
                       setLocation(e.target.value);
-                      setShowSuggestions(true);
+                      setShowLocationSuggestions(true);
                     }}
-                    onFocus={() => setShowSuggestions(true)}
+                    onFocus={() => setShowLocationSuggestions(true)}
                     onBlur={() =>
-                      setTimeout(() => setShowSuggestions(false), 200)
+                      setTimeout(() => setShowLocationSuggestions(false), 200)
                     }
                     placeholder="City or Postal Code"
                     className="block w-full pl-10 pr-3 py-3 bg-white text-black border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500 sm:text-sm"
+                    autoComplete="off"
                   />
-                  {showSuggestions && locationSuggestions.length > 0 && (
-                    <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
-                      {locationSuggestions.map((suggestion) => (
-                        <li
-                          key={suggestion.properties.place_id}
-                          className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-gray-800"
-                          onClick={() => {
-                            setLocation(suggestion.properties.formatted);
-                            setShowSuggestions(false);
-                          }}
-                        >
-                          {suggestion.properties.formatted}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  {showLocationSuggestions &&
+                    locationSuggestions.length > 0 && (
+                      <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                        {locationSuggestions.map((suggestion) => (
+                          <li
+                            key={suggestion.properties.place_id}
+                            className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-gray-800"
+                            onClick={() => {
+                              setLocation(suggestion.properties.formatted);
+                              setShowLocationSuggestions(false);
+                            }}
+                          >
+                            {suggestion.properties.formatted}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                 </div>
               </div>
 

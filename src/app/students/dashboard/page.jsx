@@ -13,22 +13,47 @@ import {
   EyeIcon,
   ChatBubbleLeftRightIcon,
   MagnifyingGlassIcon,
+  ExclamationTriangleIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import { getCurrentUser } from "../../../api/user.api";
+import { getStudentPostRequirements } from "../../../api/postRequirement.api";
 import Link from "next/link";
+
 const StudentDashboardPage = () => {
   const [studentData, setStudentData] = useState(null);
+  const [recentPosts, setRecentPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [postsLoading, setPostsLoading] = useState(false);
 
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
         const response = await getCurrentUser();
         setStudentData(response.data.data);
+
+        // Only fetch posts if user is verified
+        if (response.data.data?.isVerified) {
+          await fetchRecentPosts();
+        }
       } catch (error) {
         console.error("Error fetching student data:", error);
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchRecentPosts = async () => {
+      try {
+        setPostsLoading(true);
+        const response = await getStudentPostRequirements();
+        // Get the last 3 posts (most recent)
+        const posts = response.data.data || [];
+        setRecentPosts(posts.slice(0, 3));
+      } catch (error) {
+        console.error("Error fetching recent posts:", error);
+      } finally {
+        setPostsLoading(false);
       }
     };
 
@@ -57,8 +82,9 @@ const StudentDashboardPage = () => {
                   Welcome back, {studentData?.name?.split(" ")[0] || "Student"}!
                 </h1>
                 <p className="mt-2 text-blue-100 text-sm sm:text-base">
-                  Ready to find your perfect tutor today? Let's explore your
-                  learning journey.
+                  {studentData?.isVerified
+                    ? "Ready to find your perfect tutor today? Let's explore your learning journey."
+                    : "Please verify your account to connect with tutors and post your requirements."}
                 </p>
               </div>
               <div className="hidden sm:block">
@@ -71,21 +97,44 @@ const StudentDashboardPage = () => {
           </div>
         </div>
 
+        {/* Verification Alert for Unverified Users */}
+        {!studentData?.isVerified && (
+          <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  <strong>Account Verification Required</strong>
+                </p>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Please verify your email to connect with tutors and post your
+                  requirements. Unverified accounts will have their posts marked
+                  as pending and may be removed later.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           <StatCard
             icon={<DocumentTextIcon className="h-6 w-6 text-blue-500" />}
             title="Total Posts"
-            value="8"
-            change="+2 this week"
+            value={studentData?.isVerified ? "8" : "0"}
+            change={studentData?.isVerified ? "+2 this week" : "Verify to post"}
             bgColor="bg-blue-50"
             borderColor="border-blue-200"
           />
           <StatCard
             icon={<UserGroupIcon className="h-6 w-6 text-green-500" />}
             title="Active Tutors"
-            value="3"
-            change="+1 this week"
+            value={studentData?.isVerified ? "3" : "0"}
+            change={
+              studentData?.isVerified ? "+1 this week" : "Verify to connect"
+            }
             bgColor="bg-green-50"
             borderColor="border-green-200"
           />
@@ -100,60 +149,13 @@ const StudentDashboardPage = () => {
           <StatCard
             icon={<StarIcon className="h-6 w-6 text-purple-500" />}
             title="Reviews Given"
-            value="12"
-            change="Keep reviewing!"
+            value={studentData?.isVerified ? "12" : "0"}
+            change={
+              studentData?.isVerified ? "Keep reviewing!" : "Verify to review"
+            }
             bgColor="bg-purple-50"
             borderColor="border-purple-200"
           />
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white shadow-lg rounded-xl mb-8 border border-gray-100">
-          <div className="px-6 py-5 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg leading-6 font-semibold text-gray-900 flex items-center">
-                <BellIcon className="h-5 w-5 mr-2 text-blue-500" />
-                Recent Activity
-              </h3>
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                Last 7 days
-              </span>
-            </div>
-          </div>
-          <div className="px-6 py-5">
-            <ul className="space-y-4">
-              <ActivityItem
-                icon={<BellIcon className="h-5 w-5 text-blue-500" />}
-                title="New tutor application received"
-                description="3 tutors applied for your Mathematics post"
-                time="2 hours ago"
-                priority="high"
-              />
-              <ActivityItem
-                icon={
-                  <ChatBubbleLeftRightIcon className="h-5 w-5 text-green-500" />
-                }
-                title="Message from tutor"
-                description="Ahmed Khan sent you a message about your Physics requirement"
-                time="4 hours ago"
-                priority="medium"
-              />
-              <ActivityItem
-                icon={<CalendarIcon className="h-5 w-5 text-purple-500" />}
-                title="Session scheduled"
-                description="Your Chemistry session with Sara Ali is confirmed for tomorrow 4:00 PM"
-                time="1 day ago"
-                priority="low"
-              />
-              <ActivityItem
-                icon={<StarIcon className="h-5 w-5 text-yellow-500" />}
-                title="Review reminder"
-                description="Rate your recent session with John Smith"
-                time="2 days ago"
-                priority="low"
-              />
-            </ul>
-          </div>
         </div>
 
         {/* Quick Actions Grid */}
@@ -170,17 +172,19 @@ const StudentDashboardPage = () => {
                 title="Post New Requirement"
                 description="Share what subject you need help with and find the perfect tutor"
                 buttonText="Create Post"
-                href="/student/my-posts/create"
+                href="/students/myposts/create"
                 icon={<PlusIcon className="h-5 w-5" />}
                 buttonColor="bg-blue-600 hover:bg-blue-700"
+                disabled={!studentData?.isVerified}
               />
               <ActionCard
                 title="Find Tutors"
                 description="Browse through our verified tutors and find your match"
                 buttonText="Explore Tutors"
-                href="/student/find-tutors"
+                href="/students/find-tutors"
                 icon={<MagnifyingGlassIcon className="h-5 w-5" />}
                 buttonColor="bg-green-600 hover:bg-green-700"
+                disabled={!studentData?.isVerified}
               />
             </div>
           </div>
@@ -197,134 +201,95 @@ const StudentDashboardPage = () => {
                 title="View My Posts"
                 description="Manage your tutoring requirements and applications"
                 buttonText="View Posts"
-                href="/student/my-posts"
+                href="/students/myposts"
                 icon={<EyeIcon className="h-5 w-5" />}
                 buttonColor="bg-purple-600 hover:bg-purple-700"
+                disabled={!studentData?.isVerified}
               />
               <ActionCard
                 title="Messages & Chat"
                 description="Connect with tutors and discuss your learning needs"
                 buttonText="Open Messages"
-                href="/student/messages"
+                href="/students/messages"
                 icon={<ChatBubbleLeftRightIcon className="h-5 w-5" />}
                 buttonColor="bg-indigo-600 hover:bg-indigo-700"
+                disabled={!studentData?.isVerified}
               />
             </div>
           </div>
         </div>
 
-        {/* Recent Posts & Performance Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Posts */}
-          <div className="lg:col-span-2">
-            <div className="bg-white shadow-lg rounded-xl border border-gray-100">
-              <div className="px-6 py-5 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg leading-6 font-semibold text-gray-900">
-                    Your Recent Posts
-                  </h3>
+        {/* Recent Posts Section - Only show if verified */}
+        {studentData?.isVerified && (
+          <div className="bg-white shadow-lg rounded-xl border border-gray-100 mb-8">
+            <div className="px-6 py-5 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg leading-6 font-semibold text-gray-900">
+                  Your Recent Posts
+                </h3>
+                <Link
+                  href="/students/myposts"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  View all →
+                </Link>
+              </div>
+            </div>
+            <div className="px-6 py-4">
+              {postsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : recentPosts.length > 0 ? (
+                <div className="space-y-4">
+                  {recentPosts.map((post) => (
+                    <RecentPostCard key={post._id} post={post} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <DocumentTextIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">
+                    You haven't created any posts yet.
+                  </p>
                   <Link
-                    href="/student/my-posts"
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    href="/students/myposts/create"
+                    className="mt-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    View all →
+                    Create Your First Post
                   </Link>
                 </div>
-              </div>
-              <div className="px-6 py-5">
-                <div className="space-y-4">
-                  <PostItem
-                    title="Mathematics - Calculus Help Needed"
-                    subject="Mathematics"
-                    level="University Level"
-                    applicants="5 applications"
-                    status="active"
-                    postedDate="2 days ago"
-                  />
-                  <PostItem
-                    title="Physics - Mechanics and Thermodynamics"
-                    subject="Physics"
-                    level="A-Level"
-                    applicants="3 applications"
-                    status="active"
-                    postedDate="5 days ago"
-                  />
-                  <PostItem
-                    title="English Literature - Essay Writing"
-                    subject="English"
-                    level="High School"
-                    applicants="7 applications"
-                    status="closed"
-                    postedDate="1 week ago"
-                  />
-                </div>
-              </div>
+              )}
             </div>
           </div>
+        )}
 
-          {/* Learning Progress & Tips */}
-          <div className="space-y-6">
-            {/* Learning Progress */}
-            <div className="bg-white shadow-lg rounded-xl border border-gray-100">
-              <div className="px-6 py-5 border-b border-gray-200">
-                <h3 className="text-lg leading-6 font-semibold text-gray-900">
-                  Learning Progress
-                </h3>
+        {/* Learning Progress Section */}
+        <div className="bg-white shadow-lg rounded-xl border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Your Learning Progress
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg text-center">
+              <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                <ClockIcon className="h-6 w-6 text-blue-600" />
               </div>
-              <div className="px-6 py-5">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      Sessions Completed
-                    </span>
-                    <span className="text-sm font-bold text-blue-600">
-                      12/15
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full"
-                      style={{ width: "80%" }}
-                    ></div>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4">
-                    <span className="text-sm font-medium text-gray-700">
-                      Profile Completion
-                    </span>
-                    <span className="text-sm font-bold text-green-600">
-                      90%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full"
-                      style={{ width: "90%" }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
+              <h4 className="font-medium text-gray-900">Hours Learned</h4>
+              <p className="text-2xl font-bold text-blue-600">24</p>
             </div>
-
-            {/* Quick Tips */}
-            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl p-6">
-              <h4 className="text-lg font-semibold text-indigo-900 mb-3">
-                💡 Quick Tips
-              </h4>
-              <ul className="space-y-2 text-sm text-indigo-700">
-                <li className="flex items-start space-x-2">
-                  <span className="text-indigo-500 mt-1">•</span>
-                  <span>Complete your profile to attract better tutors</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-indigo-500 mt-1">•</span>
-                  <span>Be specific about your learning goals in posts</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-indigo-500 mt-1">•</span>
-                  <span>Review tutors after sessions to help others</span>
-                </li>
-              </ul>
+            <div className="bg-green-50 p-4 rounded-lg text-center">
+              <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                <StarIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <h4 className="font-medium text-gray-900">Sessions Completed</h4>
+              <p className="text-2xl font-bold text-green-600">12</p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg text-center">
+              <div className="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2">
+                <ChartBarIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <h4 className="font-medium text-gray-900">Progress Rate</h4>
+              <p className="text-2xl font-bold text-purple-600">78%</p>
             </div>
           </div>
         </div>
@@ -360,44 +325,6 @@ const StatCard = ({ icon, title, value, change, bgColor, borderColor }) => {
   );
 };
 
-const ActivityItem = ({ icon, title, description, time, priority }) => {
-  const priorityColors = {
-    high: "border-l-4 border-red-400 bg-red-50",
-    medium: "border-l-4 border-yellow-400 bg-yellow-50",
-    low: "border-l-4 border-blue-400 bg-blue-50",
-  };
-
-  return (
-    <li
-      className={`py-4 px-4 rounded-lg ${priorityColors[priority]} transition-all duration-200 hover:shadow-md`}
-    >
-      <div className="flex space-x-4">
-        <div className="flex-shrink-0 bg-white rounded-full p-2 shadow-sm">
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900">{title}</p>
-          <p className="text-sm text-gray-600 mt-1">{description}</p>
-          <p className="text-xs text-gray-400 mt-2">{time}</p>
-        </div>
-        <div className="flex-shrink-0">
-          <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              priority === "high"
-                ? "bg-red-100 text-red-800"
-                : priority === "medium"
-                ? "bg-yellow-100 text-yellow-800"
-                : "bg-blue-100 text-blue-800"
-            }`}
-          >
-            {priority}
-          </span>
-        </div>
-      </div>
-    </li>
-  );
-};
-
 const ActionCard = ({
   title,
   description,
@@ -405,38 +332,63 @@ const ActionCard = ({
   href,
   icon,
   buttonColor,
+  disabled = false,
 }) => {
   return (
-    <div className="group border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-md transition-all duration-300 bg-gradient-to-br from-gray-50 to-white">
+    <div
+      className={`group border border-gray-200 rounded-lg p-6 transition-all duration-300 bg-gradient-to-br from-gray-50 to-white ${
+        disabled ? "opacity-60" : "hover:border-blue-300 hover:shadow-md"
+      }`}
+    >
       <div className="flex items-start space-x-4">
-        <div className="flex-shrink-0 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg p-3 group-hover:from-blue-200 group-hover:to-indigo-200 transition-all duration-300">
+        <div
+          className={`flex-shrink-0 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg p-3 transition-all duration-300 ${
+            disabled
+              ? ""
+              : "group-hover:from-blue-200 group-hover:to-indigo-200"
+          }`}
+        >
           {icon}
         </div>
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors">
+          <h3
+            className={`text-lg font-semibold text-gray-900 mb-2 transition-colors ${
+              disabled ? "" : "group-hover:text-blue-700"
+            }`}
+          >
             {title}
+            {disabled && (
+              <span className="ml-2 text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
+                Verify Required
+              </span>
+            )}
           </h3>
           <p className="text-sm text-gray-600 mb-4 leading-relaxed">
             {description}
           </p>
           <Link
-            href={href}
-            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${buttonColor} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105`}
+            href={disabled ? "#" : href}
+            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${buttonColor} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
+              disabled ? "cursor-not-allowed opacity-50" : "hover:scale-105"
+            }`}
+            onClick={(e) => disabled && e.preventDefault()}
           >
             {buttonText}
-            <svg
-              className="ml-2 h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
+            {!disabled && (
+              <svg
+                className="ml-2 h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            )}
           </Link>
         </div>
       </div>
@@ -444,51 +396,38 @@ const ActionCard = ({
   );
 };
 
-const PostItem = ({
-  title,
-  subject,
-  level,
-  applicants,
-  status,
-  postedDate,
-}) => {
+const RecentPostCard = ({ post }) => {
+  const formatDate = (dateString) => {
+    const options = { year: "numeric", month: "short", day: "numeric" };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
   return (
-    <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all duration-300 bg-gradient-to-r from-gray-50 to-white">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <h4 className="text-base font-semibold text-gray-900 mb-2">
-            {title}
+    <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-300">
+      <div className="flex justify-between items-start">
+        <div>
+          <h4 className="font-medium text-gray-900">
+            {post.subjects.map((s) => s.name).join(", ")}
           </h4>
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {subject}
-            </span>
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-              {level}
-            </span>
-            <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                status === "active"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {status}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <span>{applicants}</span>
-            <span>{postedDate}</span>
+          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+            {post.description}
+          </p>
+          <div className="flex items-center mt-2 text-sm text-gray-500">
+            <span>{post.location}</span>
+            <span className="mx-2">•</span>
+            <span>{formatDate(post.createdAt)}</span>
           </div>
         </div>
-        <div className="ml-4">
-          <Link
-            href="/student/my-posts"
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
+        <div className="flex-shrink-0 ml-4">
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              post.isVerified
+                ? "bg-green-100 text-green-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
           >
-            View
-            <EyeIcon className="ml-1 h-4 w-4" />
-          </Link>
+            {post.isVerified ? "Verified" : "Pending"}
+          </span>
         </div>
       </div>
     </div>

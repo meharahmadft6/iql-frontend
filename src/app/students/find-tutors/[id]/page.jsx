@@ -266,16 +266,7 @@ const TeacherProfilePage = ({ params }) => {
                   >
                     Phone
                   </button>
-                  <button
-                    onClick={() => setActiveTab("pay")}
-                    className={`flex-1 py-3 px-4 font-medium text-center ${
-                      activeTab === "pay"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    Pay
-                  </button>
+
                   <button
                     onClick={() => setActiveTab("review")}
                     className={`flex-1 py-3 px-4 font-medium text-center ${
@@ -329,35 +320,7 @@ const TeacherProfilePage = ({ params }) => {
                     </div>
                   )}
 
-                  {activeTab === "pay" && (
-                    <div>
-                      <h3 className="text-xl font-semibold mb-4">
-                        Payment Options
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="border rounded-lg p-4">
-                          <h4 className="font-medium mb-2">Hourly Rate</h4>
-                          <p className="text-gray-700 mb-3">
-                            {teacher.fee} {teacher.feeDetails} per hour
-                          </p>
-                          <button className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition-colors">
-                            Pay Now
-                          </button>
-                        </div>
-                        <div className="border rounded-lg p-4">
-                          <h4 className="font-medium mb-2">Weekly Package</h4>
-                          <p className="text-gray-700 mb-3">
-                            N$150–300/week (USD 8.52–17.04/week)
-                          </p>
-                          <button className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition-colors">
-                            Subscribe
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === "review" && (
+                    {activeTab === "review" && (
                     <div>
                       <h3 className="text-xl font-semibold mb-4">Reviews</h3>
                       <div className="space-y-4">

@@ -5,7 +5,7 @@ import Link from "next/link";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import { getHomeworkHelpers } from "../../../api/teacher.api";
-
+import { SearchX } from "lucide-react";
 const TeachersPage = () => {
   const [teachers, setTeachers] = useState([]);
   const [filteredTeachers, setFilteredTeachers] = useState([]);
@@ -117,15 +117,25 @@ const TeachersPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="flex-grow flex items-center justify-center">
-          <div className="text-center text-red-500">
-            <p className="text-xl mb-2">⚠️ Error</p>
-            <p>{error}</p>
+          <div className="text-center max-w-md mx-auto p-8">
+            <SearchX className="mx-auto text-gray-400 w-16 h-16 mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              No Teachers Found
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Currently, no teachers are available for the selected subject or
+              location. Stay tuned — new tutors are joining soon!
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            >
+              Refresh
+            </button>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -296,19 +306,6 @@ const TeachersPage = () => {
                   {/* Card Header */}
                   <div className="p-6 pb-4">
                     <div className="flex items-start space-x-4 mb-4">
-                      <div className="flex-shrink-0">
-                        {teacher.profilePhotoUrl ? (
-                          <img
-                            src={teacher.profilePhotoUrl}
-                            alt={teacher.user.name}
-                            className="w-16 h-16 rounded-full object-cover border-2 border-gray-100"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
-                            {teacher.user.name.charAt(0)}
-                          </div>
-                        )}
-                      </div>
                       <div className="flex-grow min-w-0">
                         <h3 className="text-lg font-semibold text-gray-900 truncate">
                           {teacher.user.name}
@@ -336,7 +333,7 @@ const TeachersPage = () => {
                           Fee
                         </p>
                         <p className="text-sm font-semibold text-gray-900 mt-1">
-                          {teacher.fee} {teacher.feeDetails}
+                          {teacher.fee}
                         </p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-3">

@@ -24,6 +24,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
   const router = useRouter();
   const pathname = usePathname(); // Use usePathname hook
   const [teachersData, setTeachersData] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -47,7 +48,8 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
         const response = await API.get("/teachers/me");
 
         setTeachersData(response.data.data);
-
+        setWalletBalance(response.data.walletBalance);
+        // console.log(response.data.data);
         // Redirect if not approved - use pathname instead of router.pathname
         if (
           !response.data.data.isApproved &&
@@ -300,17 +302,11 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
             <div className="hidden sm:flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-full">
               <CreditCardIcon className="h-5 w-5 text-blue-600" />
               <span className="text-sm font-medium text-blue-700">
-                {teachersData?.wallet?.coins || 150} Connects
+                {walletBalance} Connects
               </span>
             </div>
 
             {/* Mobile Wallet (Compact) */}
-            <div className="sm:hidden flex items-center space-x-1 bg-blue-50 px-2 py-1 rounded-full">
-              <CreditCardIcon className="h-4 w-4 text-blue-600" />
-              <span className="text-xs font-medium text-blue-700">
-                {teachersData?.wallet?.coins || 150}
-              </span>
-            </div>
 
             {/* Profile Dropdown */}
             <div className="relative" ref={dropdownRef}>
@@ -378,7 +374,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                       <div className="flex items-center space-x-2">
                         <CreditCardIcon className="h-4 w-4 text-blue-600" />
                         <span className="text-sm text-gray-700">
-                          {teachersData?.wallet?.coins || 150} Connects
+                          {walletBalance || 0} Connects
                         </span>
                       </div>
                     </div>

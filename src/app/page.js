@@ -9,7 +9,6 @@ import TrustedBy from "../components/TrustedBy";
 import HeroSection from "../components/Hero";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getCurrentUser } from "../api/user.api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function Home() {
@@ -17,37 +16,43 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuthAndRedirect = async () => {
+    const checkAuthAndRedirect = () => {
       try {
         const token = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("userData");
 
-        if (!token) {
+        if (!token || !storedUser) {
           setLoading(false);
           return;
         }
 
-        // Verify token and get user data
-        const response = await getCurrentUser();
-        const userData = response?.data?.data;
+        const userData = JSON.parse(storedUser);
 
-        if (userData) {
-          // Redirect based on role and profileExists
-          if (userData.role === "admin") {
+        // ✅ Redirect based on role + profileExists
+        switch (userData.role) {
+          case "admin":
             router.push("/dashboard");
-          } else if (userData.role === "teacher") {
+            break;
+
+          case "teacher":
             if (userData.profileExists) {
               router.push("/teachers/dashboard");
             } else {
               router.push("/teachers");
             }
-          } else if (userData.role === "student") {
+            break;
+
+          case "student":
             router.push("/students/dashboard");
-          }
+            break;
+
+          default:
+            router.push("/");
         }
       } catch (error) {
         console.error("Auth check failed:", error);
-        // Clear invalid token
         localStorage.removeItem("token");
+        localStorage.removeItem("userData");
       } finally {
         setLoading(false);
       }

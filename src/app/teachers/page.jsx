@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createTeacherProfile } from "../../api/teacher.api";
+import { getSubjects, createSubject } from "../../api/subject.api"; // Import subject APIs
 import Navbar from "../../components/NavbarProfile";
 import Footer from "../../components/Footer";
 
@@ -16,7 +17,93 @@ const CreateTeacherProfile = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
+  // Subject-related states
+  const [subjectsData, setSubjectsData] = useState([]);
+  const [subjectSuggestions, setSubjectSuggestions] = useState([[]]);
+  const [showSubjectSuggestions, setShowSubjectSuggestions] = useState([false]);
+
   const GEOAPIFY_KEY = "216ee53519b343a5be36cba1a2fa6ed6";
+
+  // Level options for dropdown
+  const levelOptions = [
+    // General proficiency levels
+    "Beginner",
+    "Intermediate",
+    "Advanced",
+    "Expert",
+    "Proficiency",
+
+    // School grades
+    "Kindergarten",
+    "Grade 1",
+    "Grade 2",
+    "Grade 3",
+    "Grade 4",
+    "Grade 5",
+    "Grade 6",
+    "Grade 7",
+    "Grade 8",
+    "Grade 9",
+    "Grade 10",
+    "Grade 11",
+    "Grade 12",
+
+    // International school levels
+    "Primary",
+    "Secondary",
+    "IGCSE",
+    "igcse",
+    "O-Level",
+    "AS-Level",
+    "A-Level",
+    "IB Middle Years",
+    "IB Diploma",
+
+    // Higher education
+    "Certificate",
+    "Diploma",
+    "Associate",
+    "Bachelor's",
+    "Master's",
+    "PhD",
+    "Postdoctoral",
+
+    // University year levels
+    "Undergraduate - Year 1",
+    "Undergraduate - Year 2",
+    "Undergraduate - Year 3",
+    "Undergraduate - Year 4",
+    "Postgraduate - Year 1",
+    "Postgraduate - Year 2",
+
+    // Professional levels
+    "Entry Level",
+    "Junior",
+    "Mid-Level",
+    "Senior",
+    "Executive",
+
+    // Language proficiency
+    "A1 (Beginner)",
+    "A2 (Elementary)",
+    "B1 (Intermediate)",
+    "B2 (Upper-Intermediate)",
+    "C1 (Advanced)",
+    "C2 (Proficient)",
+
+    // Other classifications
+    "Introductory",
+    "Foundation",
+    "General",
+    "Honors",
+    "AP (Advanced Placement)",
+    "Remedial",
+    "Specialized",
+    "Research",
+    "Thesis",
+    "Other",
+  ];
+
   // Initial form state
   const [formData, setFormData] = useState({
     // Step 1 - Basic Details
@@ -66,6 +153,23 @@ const CreateTeacherProfile = () => {
     idProofFile: null,
     profilePhoto: null,
   });
+
+  // Fetch subjects on component mount
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const response = await getSubjects();
+        if (response.data.success) {
+          setSubjectsData(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
+
   // Handle input change for simple fields
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -85,6 +189,7 @@ const CreateTeacherProfile = () => {
       setSuggestions([]);
     }
   }, [formData.location]);
+
   useEffect(() => {
     const storedUser = localStorage.getItem("userData");
     if (!storedUser) {
@@ -133,6 +238,7 @@ const CreateTeacherProfile = () => {
     setSuggestions([]);
     setShowSuggestions(false);
   };
+
   // Handle array field changes (subjects, education, experience)
   const handleArrayChange = (arrayName, index, e) => {
     const { name, value, type, checked } = e.target;
@@ -153,6 +259,12 @@ const CreateTeacherProfile = () => {
       ...prev,
       [arrayName]: [...prev[arrayName], { ...template }],
     }));
+
+    // If adding a subject, also add to suggestions arrays
+    if (arrayName === "subjects") {
+      setSubjectSuggestions([...subjectSuggestions, []]);
+      setShowSubjectSuggestions([...showSubjectSuggestions, false]);
+    }
   };
 
   // Remove item from array
@@ -162,6 +274,17 @@ const CreateTeacherProfile = () => {
       ...prev,
       [arrayName]: updatedArray,
     }));
+
+    // If removing a subject, also remove from suggestions arrays
+    if (arrayName === "subjects") {
+      const newSubjectSuggestions = [...subjectSuggestions];
+      newSubjectSuggestions.splice(index, 1);
+      setSubjectSuggestions(newSubjectSuggestions);
+
+      const newShowSuggestions = [...showSubjectSuggestions];
+      newShowSuggestions.splice(index, 1);
+      setShowSubjectSuggestions(newShowSuggestions);
+    }
   };
 
   // Handle file upload
@@ -190,6 +313,109 @@ const CreateTeacherProfile = () => {
       ...prev,
       languages: updatedLanguages,
     }));
+  };
+
+  // Filter subjects based on input for a specific index
+  const filterSubjectSuggestions = (index, query) => {
+    if (query.length < 2) {
+      const newSuggestions = [...subjectSuggestions];
+      newSuggestions[index] = [];
+      setSubjectSuggestions(newSuggestions);
+      return;
+    }
+
+    const filtered = subjectsData.filter(
+      (subj) =>
+        subj.name.toLowerCase().includes(query.toLowerCase()) ||
+        (subj.category &&
+          subj.category.toLowerCase().includes(query.toLowerCase())) ||
+        subj.level.toLowerCase().includes(query.toLowerCase())
+    );
+
+    const newSuggestions = [...subjectSuggestions];
+    newSuggestions[index] = filtered;
+    setSubjectSuggestions(newSuggestions);
+  };
+
+  // Handle subject input change with debouncing
+  const handleSubjectInputChange = (index, value) => {
+    // Update the subjects array directly
+    const updatedSubjects = [...formData.subjects];
+    updatedSubjects[index] = {
+      ...updatedSubjects[index],
+      name: value,
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      subjects: updatedSubjects,
+    }));
+
+    // Show suggestions when typing
+    const newShowSuggestions = [...showSubjectSuggestions];
+    newShowSuggestions[index] = true;
+    setShowSubjectSuggestions(newShowSuggestions);
+
+    // Filter suggestions with debounce
+    setTimeout(() => {
+      filterSubjectSuggestions(index, value);
+    }, 300);
+  };
+
+  const selectSubject = async (index, subject) => {
+    // Update the subjects array directly
+    const updatedSubjects = [...formData.subjects];
+    updatedSubjects[index] = {
+      ...updatedSubjects[index],
+      name: subject.name,
+      fromLevel: subject.level,
+      toLevel: subject.level,
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      subjects: updatedSubjects,
+    }));
+
+    // Hide suggestions for this input
+    const newShowSuggestions = [...showSubjectSuggestions];
+    newShowSuggestions[index] = false;
+    setShowSubjectSuggestions(newShowSuggestions);
+  };
+  // Create a new subject if it doesn't exist
+  const createNewSubject = async (index, subjectName) => {
+    try {
+      // Extract category from subject name (simple approach)
+      const category = subjectName.split(" ")[0]; // First word as category
+
+      const newSubject = {
+        name: subjectName,
+        category: category,
+        level: "Other", // Default level
+      };
+
+      const response = await createSubject(newSubject);
+
+      if (response.data.success) {
+        // Add the new subject to our local data
+        setSubjectsData([...subjectsData, response.data.data]);
+
+        // Update the form with the new subject
+        const nameEvent = {
+          target: {
+            name: "name",
+            value: response.data.data.name,
+          },
+        };
+        handleArrayChange("subjects", index, nameEvent);
+
+        // Show success message or handle as needed
+        console.log("New subject created successfully");
+      }
+    } catch (error) {
+      console.error("Error creating new subject:", error);
+      // Even if creation fails, we can still use the entered text
+    }
   };
 
   // Form validation for current step
@@ -306,6 +532,23 @@ const CreateTeacherProfile = () => {
         }
       }
       console.log("Form Data to Send:", formDataToSend);
+      // Before creating the profile, handle new subjects
+      for (let i = 0; i < formData.subjects.length; i++) {
+        const subject = formData.subjects[i];
+        const existingSubject = subjectsData.find(
+          (s) => s.name.toLowerCase() === subject.name.toLowerCase()
+        );
+
+        if (!existingSubject) {
+          try {
+            await createNewSubject(i, subject.name);
+          } catch (error) {
+            console.log(
+              `Could not create subject ${subject.name}, but continuing...`
+            );
+          }
+        }
+      }
       await createTeacherProfile(formDataToSend);
       router.push("/teachers/dashboard");
     } catch (err) {
@@ -525,7 +768,7 @@ const CreateTeacherProfile = () => {
             </div>
           )}
 
-          {/* Step 3: Subjects */}
+          {/* Step 3: Subjects - UPDATED WITH SUGGESTIONS */}
           {step === 3 && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Subjects You Teach</h2>
@@ -543,48 +786,112 @@ const CreateTeacherProfile = () => {
                       </button>
                     )}
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="block mb-1">Subject Name*</label>
                     <input
                       type="text"
                       name="name"
                       value={subject.name}
-                      onChange={(e) => handleArrayChange("subjects", index, e)}
+                      onChange={(e) =>
+                        handleSubjectInputChange(index, e.target.value)
+                      }
+                      onFocus={() => {
+                        const newShowSuggestions = [...showSubjectSuggestions];
+                        newShowSuggestions[index] = true;
+                        setShowSubjectSuggestions(newShowSuggestions);
+                        filterSubjectSuggestions(index, subject.name);
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => {
+                          const newShowSuggestions = [
+                            ...showSubjectSuggestions,
+                          ];
+                          newShowSuggestions[index] = false;
+                          setShowSubjectSuggestions(newShowSuggestions);
+                        }, 200);
+                      }}
                       className="w-full p-2 border rounded"
                       placeholder="e.g. Mathematics, Physics, etc."
                       required
+                      autoComplete="off"
                     />
+                    {showSubjectSuggestions[index] &&
+                      subjectSuggestions[index] &&
+                      subjectSuggestions[index].length > 0 && (
+                        <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                          {subjectSuggestions[index].map((suggestion) => (
+                            <li
+                              key={suggestion._id}
+                              className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                              onMouseDown={() =>
+                                selectSubject(index, suggestion)
+                              }
+                            >
+                              <div className="font-medium">
+                                {suggestion.name}
+                              </div>
+                              <div className="text-sm text-gray-600 flex justify-between mt-1">
+                                <span>{suggestion.category}</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                  {suggestion.level}
+                                </span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block mb-1">From Level*</label>
-                      <input
-                        type="text"
+                      <select
                         name="fromLevel"
                         value={subject.fromLevel}
                         onChange={(e) =>
                           handleArrayChange("subjects", index, e)
                         }
-                        className="w-full p-2 border rounded"
-                        placeholder="e.g. Grade 5, Beginner, etc."
+                        className="w-full p-2 border rounded h-10 text-sm"
+                        style={{ maxHeight: "200px", overflowY: "auto" }}
                         required
-                      />
+                      >
+                        <option value="">Select Level</option>
+                        {levelOptions.map((level) => (
+                          <option key={level} value={level} className="py-1">
+                            {level}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block mb-1">To Level*</label>
-                      <input
-                        type="text"
+                      <select
                         name="toLevel"
                         value={subject.toLevel}
                         onChange={(e) =>
                           handleArrayChange("subjects", index, e)
                         }
-                        className="w-full p-2 border rounded"
-                        placeholder="e.g. Grade 12, Advanced, etc."
+                        className="w-full p-2 border rounded h-10 text-sm"
+                        style={{ maxHeight: "200px", overflowY: "auto" }}
                         required
-                      />
+                      >
+                        <option value="">Select Level</option>
+                        {levelOptions.map((level) => (
+                          <option key={level} value={level} className="py-1">
+                            {level}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
+                  {subject.name &&
+                    !subjectsData.some(
+                      (s) => s.name.toLowerCase() === subject.name.toLowerCase()
+                    ) && (
+                      <div className="text-sm text-blue-600">
+                        This subject doesn't exist in our database. It will be
+                        created automatically.
+                      </div>
+                    )}
                 </div>
               ))}
               <button

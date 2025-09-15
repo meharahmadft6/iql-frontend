@@ -40,14 +40,21 @@ export default function LoginPage() {
     }));
   };
 
-  const redirectBasedOnRole = (role, profileExists) => {
-    switch (role) {
+  const redirectBasedOnRole = () => {
+    const userData = JSON.parse(localStorage.getItem("userData"));
+
+    if (!userData) {
+      router.push("/");
+      return;
+    }
+
+    switch (userData.role) {
       case "admin":
         router.push("/dashboard");
         break;
 
       case "teacher":
-        if (profileExists) {
+        if (userData.profileExists) {
           router.push("/teachers/dashboard");
         } else {
           router.push("/teachers");
@@ -87,12 +94,8 @@ export default function LoginPage() {
 
       const data = await response.json();
 
-      // Handle different response statuses
       if (!response.ok) {
-        // Close the loading dialog first
         Swal.close();
-
-        // Show error with backend message
         Swal.fire({
           icon: "error",
           title: "Login Failed",
@@ -102,27 +105,22 @@ export default function LoginPage() {
             "Invalid credentials. Please try again.",
           confirmButtonColor: "#155dfc",
         });
-
         setLoading(false);
-        return; // Exit early on error
+        return;
       }
 
-      // Success case
-      // Save token and user data to localStorage
+      // ✅ Save token
       localStorage.setItem("token", data.token);
 
+      // ✅ Build consistent userData
       const userData = {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
         role: data.user.role,
         isVerified: data.user.isVerified,
+        profileExists: data.user.role === "teacher" ? data.profileExists : true,
       };
-
-      // If student, also store profileExists
-      if (data.user.role === "teacher") {
-        userData.profileExists = data.profileExists;
-      }
 
       localStorage.setItem("userData", JSON.stringify(userData));
 
@@ -134,17 +132,13 @@ export default function LoginPage() {
         timer: 1500,
       });
 
-      // Redirect based on role after success
+      // ✅ Redirect using localStorage
       setTimeout(() => {
-        redirectBasedOnRole(data.user.role, data.profileExists);
+        redirectBasedOnRole();
       }, 1500);
     } catch (err) {
       console.error("Login error:", err);
-
-      // Close loading dialog if it's still open
       Swal.close();
-
-      // Show error message
       Swal.fire({
         icon: "error",
         title: "Login Failed",

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   HomeIcon,
@@ -19,10 +19,12 @@ import * as userApi from "../../../api/user.api";
 
 const DashboardLayout = ({ children, title = "Dashboard" }) => {
   const router = useRouter();
+  const pathname = usePathname();
+  const [walletBalance, setWalletBalance] = useState(0);
   const [userData, setUserData] = useState(null);
   const [studentsStats, setStudentsStats] = useState({
     totalPosts: 0,
-    walletCoins: 150,
+    walletCoins: 0,
     tutorsApplied: 0,
     activeTutors: 0,
   });
@@ -36,9 +38,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
       try {
         const response = await userApi.getCurrentUser();
         setUserData(response.data.data);
-
-        // In a real app, you would fetch students-specific stats from an API
-        // For now, using mock data
+        setWalletBalance(response.data.walletBalance);
         setStudentsStats({
           totalPosts: 5,
           walletCoins: 150,
@@ -134,14 +134,14 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
               href="/students/dashboard"
               icon={<HomeIcon className="h-5 w-5" />}
               text="Dashboard"
-              active={router.pathname === "/students/dashboard"}
+              active={pathname === "/students/dashboard"} // Changed to use pathname
               mobile
             />
             <NavItem
               href="/students/profile"
               icon={<UserCircleIcon className="h-5 w-5" />}
               text="Profile"
-              active={router.pathname === "/students/profile"}
+              active={pathname === "/students/profile"} // Changed to use pathname
               mobile
             />
             {userData?.isVerified && (
@@ -150,28 +150,28 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                   href="/students/myposts"
                   icon={<ClipboardDocumentListIcon className="h-5 w-5" />}
                   text="My Posts"
-                  active={router.pathname === "/students/myposts"}
+                  active={pathname === "/students/myposts"} // Changed to use pathname
                   mobile
                 />
                 <NavItem
                   href="/students/find-tutors"
                   icon={<AcademicCapIcon className="h-5 w-5" />}
                   text="Find Tutors"
-                  active={router.pathname === "/students/find-tutors"}
+                  active={pathname === "/students/find-tutors"} // Changed to use pathname
                   mobile
                 />
                 <NavItem
                   href="/students/wallet"
                   icon={<CreditCardIcon className="h-5 w-5" />}
                   text="Wallet"
-                  active={router.pathname === "/students/wallet"}
+                  active={pathname === "/students/wallet"} // Changed to use pathname
                   mobile
                 />
                 <NavItem
                   href="/students/reviews"
                   icon={<StarIcon className="h-5 w-5" />}
                   text="Reviews"
-                  active={router.pathname === "/students/reviews"}
+                  active={pathname === "/students/reviews"} // Changed to use pathname
                   mobile
                 />
               </>
@@ -198,13 +198,13 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                 href="/students/dashboard"
                 icon={<HomeIcon className="h-6 w-6" />}
                 text="Dashboard"
-                active={router.pathname === "/students/dashboard"}
+                active={pathname === "/students/dashboard"} // Changed to use pathname
               />
               <NavItem
                 href="/students/profile"
                 icon={<UserCircleIcon className="h-6 w-6" />}
                 text="Profile"
-                active={router.pathname === "/students/profile"}
+                active={pathname === "/students/profile"} // Changed to use pathname
               />
               {userData?.isVerified && (
                 <>
@@ -212,28 +212,28 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                     href="/students/myposts"
                     icon={<ClipboardDocumentListIcon className="h-6 w-6" />}
                     text="My Posts"
-                    active={router.pathname === "/students/myposts"}
+                    active={pathname === "/students/myposts"} // Changed to use pathname
                   />
                   <NavItem
                     href="/students/find-tutors"
                     icon={<AcademicCapIcon className="h-6 w-6" />}
                     text="Find Tutors"
-                    active={router.pathname === "/students/find-tutors"}
+                    active={pathname === "/students/find-tutors"} // Changed to use pathname
                   />
                   <NavItem
                     href="/students/wallet"
                     icon={<CreditCardIcon className="h-6 w-6" />}
                     text="Wallet"
-                    active={router.pathname === "/students/wallet"}
+                    active={pathname === "/students/wallet"} // Changed to use pathname
                   />
                   <NavItem
                     href="/students/reviews"
                     icon={<StarIcon className="h-6 w-6" />}
                     text="Reviews"
-                    active={router.pathname === "/students/reviews"}
+                    active={pathname === "/students/reviews"} // Changed to use pathname
                   />
                 </>
-              )}
+              )}{" "}
             </nav>
           </div>
         </div>
@@ -278,15 +278,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
             <div className="hidden sm:flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-full">
               <CreditCardIcon className="h-5 w-5 text-blue-600" />
               <span className="text-sm font-medium text-blue-700">
-                {studentsStats.walletCoins} Connects
-              </span>
-            </div>
-
-            {/* Mobile Wallet (Compact) */}
-            <div className="sm:hidden flex items-center space-x-1 bg-blue-50 px-2 py-1 rounded-full">
-              <CreditCardIcon className="h-4 w-4 text-blue-600" />
-              <span className="text-xs font-medium text-blue-700">
-                {studentsStats.walletCoins}
+                {walletBalance} Connects
               </span>
             </div>
 
@@ -360,7 +352,7 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                       <div className="flex items-center space-x-2">
                         <CreditCardIcon className="h-4 w-4 text-blue-600" />
                         <span className="text-sm text-gray-700">
-                          {studentsStats.walletCoins} Connects
+                          {walletBalance} Connects
                         </span>
                       </div>
                     </div>

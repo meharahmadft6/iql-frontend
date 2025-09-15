@@ -5,6 +5,8 @@ import Swal from "sweetalert2";
 import Navbar from "../../components/NavbarProfile";
 import Footer from "../../components/Footer";
 import { useRouter } from "next/navigation";
+import { getSubjects } from "../../api/subject.api"; // Import the subjects API
+
 const RequestTeacherPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,11 +21,16 @@ const RequestTeacherPage = () => {
   const [languages, setLanguages] = useState([]);
   const [errors, setErrors] = useState({});
   const router = useRouter();
+  const [subjectSuggestions, setSubjectSuggestions] = useState([]);
+  const [showSubjectSuggestions, setShowSubjectSuggestions] = useState([]);
+  const [subjectsData, setSubjectsData] = useState([]);
+
   const [formData, setFormData] = useState({
     email: "",
     name: "",
     password: "",
     location: "",
+    country: "", // Added to store country name
     phone: {
       countryCode: "+92",
       number: "",
@@ -33,7 +40,7 @@ const RequestTeacherPage = () => {
     serviceType: "",
     meetingOptions: [],
     budget: {
-      currency: "PKR",
+      currency: "PKR", // Default currency
       amount: "",
       frequency: "",
     },
@@ -42,6 +49,49 @@ const RequestTeacherPage = () => {
     image: null,
   });
 
+  // Function to fetch currency based on country name
+  const fetchCurrencyByCountry = async (countryName) => {
+    try {
+      // First try to use our static mapping for better performance
+      const staticMapping = {
+        pakistan: "PKR",
+        "united states": "USD",
+        "united kingdom": "GBP",
+        canada: "CAD",
+        australia: "AUD",
+        india: "INR",
+        germany: "EUR",
+        france: "EUR",
+        spain: "EUR",
+        italy: "EUR",
+        netherlands: "EUR",
+        japan: "JPY",
+        china: "CNY",
+        uae: "AED",
+        "saudi arabia": "SAR",
+      };
+
+      const lowerCaseCountry = countryName.toLowerCase();
+      if (staticMapping[lowerCaseCountry]) {
+        return staticMapping[lowerCaseCountry];
+      }
+
+      // Fallback to API if not found in static mapping
+      const response = await fetch(
+        `https://restcountries.com/v3.1/name/${countryName}`
+      );
+      const data = await response.json();
+
+      if (data && data[0] && data[0].currencies) {
+        const currencyCode = Object.keys(data[0].currencies)[0];
+        return currencyCode;
+      }
+    } catch (error) {
+      console.error("Error fetching currency:", error);
+    }
+
+    return "USD"; // Default fallback
+  };
   const GEOAPIFY_KEY = "216ee53519b343a5be36cba1a2fa6ed6";
 
   const levelOptions = [
@@ -49,6 +99,10 @@ const RequestTeacherPage = () => {
     "Intermediate",
     "Advanced",
     "Expert",
+    "Proficiency",
+
+    // School grades
+    "Kindergarten",
     "Grade 1",
     "Grade 2",
     "Grade 3",
@@ -61,10 +115,60 @@ const RequestTeacherPage = () => {
     "Grade 10",
     "Grade 11",
     "Grade 12",
+
+    // International school levels
+    "Primary",
+    "Secondary",
+    "IGCSE",
+    "O-Level",
+    "AS-Level",
+    "A-Level",
+    "IB Middle Years",
+    "IB Diploma",
+
+    // Higher education
+    "Certificate",
     "Diploma",
+    "Associate",
     "Bachelor's",
     "Master's",
     "PhD",
+    "Postdoctoral",
+
+    // University year levels
+    "Undergraduate - Year 1",
+    "Undergraduate - Year 2",
+    "Undergraduate - Year 3",
+    "Undergraduate - Year 4",
+    "Postgraduate - Year 1",
+    "Postgraduate - Year 2",
+
+    // Professional levels
+    "Entry Level",
+    "Junior",
+    "Mid-Level",
+    "Senior",
+    "Executive",
+
+    // Language proficiency
+    "A1 (Beginner)",
+    "A2 (Elementary)",
+    "B1 (Intermediate)",
+    "B2 (Upper-Intermediate)",
+    "C1 (Advanced)",
+    "C2 (Proficient)",
+
+    // Other classifications
+    "Introductory",
+    "Foundation",
+    "General",
+    "Honors",
+    "AP (Advanced Placement)",
+    "Remedial",
+    "Specialized",
+    "Research",
+    "Thesis",
+    "Diploma",
   ];
 
   const frequencyOptions = [
@@ -410,13 +514,23 @@ const RequestTeacherPage = () => {
     }
   };
 
-  const handleLocationSelect = (location) => {
+  const handleLocationSelect = async (suggestion) => {
+    const country = suggestion.properties.country;
+
+    // Get currency based on country
+    const currency = await fetchCurrencyByCountry(country);
+
     setFormData((prev) => ({
       ...prev,
-      location: location.properties.formatted,
+      location: suggestion.properties.formatted,
+      country: country,
+      budget: {
+        ...prev.budget,
+        currency: currency,
+      },
     }));
+
     setShowLocationDropdown(false);
-    setLocationSuggestions([]);
   };
 
   const handleArrayChange = (index, field, value, arrayName) => {
@@ -694,6 +808,7 @@ const RequestTeacherPage = () => {
           <input
             type="password"
             name="password"
+            min={6}
             value={formData.password}
             onChange={handleInputChange}
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -954,6 +1069,75 @@ const RequestTeacherPage = () => {
     </div>
   );
 
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const response = await getSubjects();
+        if (response.data.success) {
+          setSubjectsData(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
+
+  // Filter subjects based on input for a specific index
+  const filterSubjectSuggestions = (index, query) => {
+    if (query.length < 2) {
+      const newSuggestions = [...subjectSuggestions];
+      newSuggestions[index] = [];
+      setSubjectSuggestions(newSuggestions);
+      return;
+    }
+
+    const filtered = subjectsData.filter(
+      (subj) =>
+        subj.name.toLowerCase().includes(query.toLowerCase()) ||
+        subj.category.toLowerCase().includes(query.toLowerCase()) ||
+        subj.level.toLowerCase().includes(query.toLowerCase())
+    );
+
+    const newSuggestions = [...subjectSuggestions];
+    newSuggestions[index] = filtered;
+    setSubjectSuggestions(newSuggestions);
+  };
+
+  // Handle subject input change with debouncing
+  const handleSubjectInputChange = (index, value) => {
+    // Update the form data
+    handleArrayChange(index, "name", value, "subjects");
+
+    // Filter suggestions with debounce
+    const timer = setTimeout(() => {
+      filterSubjectSuggestions(index, value);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  };
+
+  // Select a subject from suggestions
+  const selectSubject = (index, subject) => {
+    handleArrayChange(index, "name", subject.name, "subjects");
+    handleArrayChange(index, "level", subject.level, "subjects");
+
+    // Hide suggestions for this input
+    const newShowSuggestions = [...showSubjectSuggestions];
+    newShowSuggestions[index] = false;
+    setShowSubjectSuggestions(newShowSuggestions);
+  };
+
+  // Initialize arrays when adding new subjects
+  const addSubjectWithSuggestions = () => {
+    addArrayItem("subjects", { name: "", level: "" });
+    // Initialize the suggestions arrays for the new input
+    setSubjectSuggestions([...subjectSuggestions, []]);
+    setShowSubjectSuggestions([...showSubjectSuggestions, false]);
+  };
+
+  // Then update your renderStep4 function to use these states and functions
   const renderStep4 = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -973,17 +1157,55 @@ const RequestTeacherPage = () => {
           {formData.subjects.map((subject, index) => (
             <div
               key={index}
-              className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 mb-2"
+              className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 mb-4 relative"
             >
-              <input
-                type="text"
-                placeholder="Subject name (e.g., Mathematics)"
-                value={subject.name}
-                onChange={(e) =>
-                  handleArrayChange(index, "name", e.target.value, "subjects")
-                }
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Subject name (e.g., Mathematics)"
+                  value={subject.name}
+                  onChange={(e) =>
+                    handleSubjectInputChange(index, e.target.value)
+                  }
+                  onFocus={() => {
+                    const newShowSuggestions = [...showSubjectSuggestions];
+                    newShowSuggestions[index] = true;
+                    setShowSubjectSuggestions(newShowSuggestions);
+                    filterSubjectSuggestions(index, subject.name);
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      const newShowSuggestions = [...showSubjectSuggestions];
+                      newShowSuggestions[index] = false;
+                      setShowSubjectSuggestions(newShowSuggestions);
+                    }, 200);
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  autoComplete="off"
+                />
+                {showSubjectSuggestions[index] &&
+                  subjectSuggestions[index] &&
+                  subjectSuggestions[index].length > 0 && (
+                    <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                      {subjectSuggestions[index].map((suggestion) => (
+                        <li
+                          key={suggestion._id}
+                          className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-gray-800 border-b border-gray-100 last:border-b-0"
+                          onMouseDown={() => selectSubject(index, suggestion)}
+                        >
+                          <div className="font-medium">{suggestion.name}</div>
+                          <div className="text-sm text-gray-600 flex justify-between mt-1">
+                            <span>{suggestion.category}</span>
+                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                              {suggestion.level}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+              </div>
+
               <select
                 value={subject.level}
                 onChange={(e) =>
@@ -998,6 +1220,7 @@ const RequestTeacherPage = () => {
                   </option>
                 ))}
               </select>
+
               {formData.subjects.length > 1 && (
                 <button
                   type="button"
@@ -1009,13 +1232,15 @@ const RequestTeacherPage = () => {
               )}
             </div>
           ))}
+
           <button
             type="button"
-            onClick={() => addArrayItem("subjects", { name: "", level: "" })}
+            onClick={addSubjectWithSuggestions}
             className="mt-2 px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 w-full sm:w-auto"
           >
             + Add Subject
           </button>
+
           {errors.subjects && (
             <p className="text-red-500 text-sm mt-1">{errors.subjects}</p>
           )}
@@ -1074,7 +1299,7 @@ const RequestTeacherPage = () => {
       </div>
     </div>
   );
-
+  
   const renderStep5 = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
