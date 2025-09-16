@@ -4,6 +4,10 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "iql.s3.amazonaws.com",
+      },
+      {
+        protocol: "https",
         hostname: "iqls3bucket.s3.ap-south-1.amazonaws.com",
       },
     ],
