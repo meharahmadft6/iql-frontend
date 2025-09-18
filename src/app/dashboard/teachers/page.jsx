@@ -56,10 +56,14 @@ const TeachersPage = () => {
   }, []);
 
   const filteredTeachers = teachers.filter((teacher) => {
+    // Check if teacher.user exists and has name property
+    const userName = teacher.user?.name?.toLowerCase() || "";
+    const userEmail = teacher.user?.email?.toLowerCase() || "";
+
     const matchesSearch =
-      teacher.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      userName.includes(searchTerm.toLowerCase()) ||
       teacher.speciality.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      teacher.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      userEmail.includes(searchTerm.toLowerCase());
 
     const matchesApproval =
       filters.isApproved === null || teacher.isApproved === filters.isApproved;
