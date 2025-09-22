@@ -41,12 +41,11 @@ export default function PostDetailPage() {
   const [contactInfo, setContactInfo] = useState(null);
   const [error, setError] = useState(null);
   const [applicationId, setApplicationId] = useState(null);
+  const [applicationChecked, setApplicationChecked] = useState(false);
 
   const checkApplicationStatusFromServer = async (postId) => {
     try {
       const response = await checkApplicationStatusFromApi(postId);
-
-      // Some API wrappers return res.data directly, others return full res
       const payload = response?.data ? response.data : response;
 
       if (payload?.success && payload?.data) {
@@ -55,20 +54,45 @@ export default function PostDetailPage() {
 
         // If application is accepted, automatically fetch contact info
         if (payload.data.status === "accepted") {
-          handleGetContact(true);
+          await handleGetContact(true);
+        }
+      } else if (
+        payload?.success === false &&
+        payload?.message === "No application found for this post"
+      ) {
+        // Clear any existing application status if no application found
+        setApplicationStatus(null);
+        setApplicationId(null);
+        setContactInfo(null);
+
+        // Also clear from localStorage if exists
+        const appliedPosts = JSON.parse(
+          localStorage.getItem("appliedPosts") || "{}"
+        );
+        if (appliedPosts[postId]) {
+          delete appliedPosts[postId];
+          localStorage.setItem("appliedPosts", JSON.stringify(appliedPosts));
         }
       }
     } catch (error) {
       console.error("Error checking application status from server:", error);
+      // If it's a "not found" error, clear application status
+      if (
+        error.response?.data?.message === "No application found for this post"
+      ) {
+        setApplicationStatus(null);
+        setApplicationId(null);
+        setContactInfo(null);
+      }
+    } finally {
+      setApplicationChecked(true);
     }
   };
 
-  // Update the useEffect to call the server check
   useEffect(() => {
     if (id) {
       fetchPost(id);
-      checkApplicationStatusFromServer(id); // Check server first
-      checkApplicationStatus(id); // Then check localStorage as fallback
+      checkApplicationStatusFromServer(id);
     }
   }, [id]);
 
@@ -90,36 +114,16 @@ export default function PostDetailPage() {
     }
   };
 
-  const checkApplicationStatus = async (postId) => {
-    try {
-      // First check localStorage
-      const appliedPosts = JSON.parse(
-        localStorage.getItem("appliedPosts") || "{}"
-      );
-
-      if (appliedPosts[postId]) {
-        setApplicationStatus(appliedPosts[postId].status);
-        setApplicationId(appliedPosts[postId].applicationId);
-
-        // If application was just submitted and is pending, start countdown for auto-acceptance
-        if (
-          appliedPosts[postId].status === "pending" &&
-          !appliedPosts[postId].autoAcceptStarted
-        ) {
-          startAutoAcceptCountdown(postId, appliedPosts[postId].applicationId);
-        }
-      }
-    } catch (err) {
-      console.error("Error checking application status:", err);
-    }
-  };
-
   const startAutoAcceptCountdown = (postId, appId) => {
     // Mark that we've started the auto-accept process
     const appliedPosts = JSON.parse(
       localStorage.getItem("appliedPosts") || "{}"
     );
-    appliedPosts[postId].autoAcceptStarted = true;
+    appliedPosts[postId] = {
+      status: "pending",
+      applicationId: appId,
+      autoAcceptStarted: true,
+    };
     localStorage.setItem("appliedPosts", JSON.stringify(appliedPosts));
 
     // Show countdown timer
@@ -132,6 +136,8 @@ export default function PostDetailPage() {
       timer: 5000,
       timerProgressBar: true,
       showConfirmButton: false,
+      allowOutsideClick: false,
+
       didOpen: () => {
         const timerInterval = setInterval(() => {
           timeLeft -= 1;
@@ -140,28 +146,44 @@ export default function PostDetailPage() {
           }
         }, 1000);
 
-        Swal.getTimer().addEventListener("done", () => {
+        // Clear interval when alert closes
+        Swal.stopTimer; // not needed here but good to know
+        Swal.getPopup().addEventListener("swal:cleanup", () => {
           clearInterval(timerInterval);
-          // Automatically accept the application after timer ends
-          handleAutoAccept(postId, appId);
         });
+      },
+
+      willClose: () => {
+        // This fires after timer finishes
+        handleAutoAccept(postId, appId);
       },
     });
   };
+  const handleAutoAccept = async (postId, appId) => {
+    try {
+      // Update application status to accepted
+      const appliedPosts = JSON.parse(
+        localStorage.getItem("appliedPosts") || "{}"
+      );
+      appliedPosts[postId].status = "accepted";
+      localStorage.setItem("appliedPosts", JSON.stringify(appliedPosts));
 
-  const handleAutoAccept = (postId, appId) => {
-    // Update application status to accepted
-    const appliedPosts = JSON.parse(
-      localStorage.getItem("appliedPosts") || "{}"
-    );
-    appliedPosts[postId].status = "accepted";
-    localStorage.setItem("appliedPosts", JSON.stringify(appliedPosts));
+      setApplicationStatus("accepted");
+      setApplicationId(appId);
 
-    setApplicationStatus("accepted");
-    setApplicationId(appId);
+      // Automatically fetch and show contact information
+      await handleGetContact(true);
 
-    // Automatically fetch and show contact information
-    handleGetContact(true);
+      // Show success message
+      Swal.fire({
+        title: "Application Accepted!",
+        text: "You can now contact the student",
+        icon: "success",
+        confirmButtonText: "Great!",
+      });
+    } catch (error) {
+      console.error("Error in auto accept:", error);
+    }
   };
 
   const handleApply = async () => {
@@ -212,7 +234,7 @@ export default function PostDetailPage() {
         "You have already applied to this post"
       ) {
         // If already applied, check the current status
-        checkApplicationStatusFromServer(post._id);
+        await checkApplicationStatusFromServer(post._id);
         errorMessage = "You have already applied to this post";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -259,11 +281,7 @@ export default function PostDetailPage() {
       console.error("Contact fetch error:", error);
 
       let errorMessage = "Failed to fetch contact information";
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+      if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
 
@@ -292,6 +310,29 @@ export default function PostDetailPage() {
         <div class="text-center">
           <p class="text-lg font-semibold">${contactInfo.phone.countryCode} ${contactInfo.phone.number}</p>
         </div>
+      `,
+      icon: "info",
+      confirmButtonText: "OK",
+    });
+  };
+
+  const handleMessageStudent = async () => {
+    if (!contactInfo) {
+      await handleGetContact(false);
+      return;
+    }
+
+    // Implement your messaging logic here
+    // For now, just show the contact info
+    await Swal.fire({
+      title: "Contact Student",
+      html: `
+        <div class="text-left">
+          <p><strong>Name:</strong> ${contactInfo.name}</p>
+          <p><strong>Email:</strong> ${contactInfo.email}</p>
+          <p><strong>Phone:</strong> ${contactInfo.phone.countryCode} ${contactInfo.phone.number}</p>
+        </div>
+        <p class="mt-4">You can contact the student using the information above.</p>
       `,
       icon: "info",
       confirmButtonText: "OK",
@@ -404,56 +445,51 @@ export default function PostDetailPage() {
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                {applicationStatus === "accepted" ? (
-                  <>
-                    <button
-                      onClick={() => handleGetContact(false)}
-                      disabled={fetchingContact}
-                      className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                    >
-                      {fetchingContact ? (
-                        <Loader className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                      )}
-                      {fetchingContact ? "Loading..." : "Message Student"}
-                    </button>
 
+              {/* Application Status Buttons */}
+              {applicationChecked && (
+                <div className="flex gap-2 flex-wrap">
+                  {applicationStatus === "accepted" ? (
+                    <>
+                      <button
+                        onClick={handleMessageStudent}
+                        className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Message Student
+                      </button>
+
+                      <button
+                        onClick={handleShowPhone}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Phone className="w-4 h-4 mr-2" />
+                        View Phone
+                      </button>
+                    </>
+                  ) : applicationStatus === "pending" ? (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                      <p className="text-blue-700 text-sm font-medium flex items-center">
+                        <Loader className="w-4 h-4 mr-2 animate-spin" />
+                        Application Pending
+                      </p>
+                    </div>
+                  ) : (
                     <button
-                      onClick={handleShowPhone}
-                      disabled={fetchingContact}
-                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      onClick={handleApply}
+                      disabled={applying}
+                      className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
                     >
-                      {fetchingContact ? (
+                      {applying ? (
                         <Loader className="w-4 h-4 mr-2 animate-spin" />
                       ) : (
-                        <Phone className="w-4 h-4 mr-2" />
+                        <Award className="w-4 h-4 mr-2" />
                       )}
-                      {fetchingContact ? "Loading..." : "View Phone"}
+                      {applying ? "Applying..." : "Apply Now"}
                     </button>
-                  </>
-                ) : applicationStatus ? (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-                    <p className="text-blue-700 text-sm font-medium">
-                      Application {applicationStatus}
-                    </p>
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleApply}
-                    disabled={applying}
-                    className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                  >
-                    {applying ? (
-                      <Loader className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Award className="w-4 h-4 mr-2" />
-                    )}
-                    {applying ? "Applying..." : "Apply Now"}
-                  </button>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -508,8 +544,6 @@ export default function PostDetailPage() {
               </div>
 
               {/* User Information */}
-
-              {/* User Information */}
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                   <User className="w-5 h-5 mr-2 text-indigo-600" />
@@ -526,8 +560,8 @@ export default function PostDetailPage() {
                     )}
                   </div>
 
-                  {/* Show email only if teacher has applied */}
-                  {applicationStatus && (
+                  {/* Show email only if teacher has applied and is accepted */}
+                  {applicationStatus === "accepted" && (
                     <div className="flex items-center">
                       <Mail className="w-4 h-4 mr-3 text-gray-400" />
                       <span className="text-gray-700">
@@ -547,11 +581,20 @@ export default function PostDetailPage() {
                     </div>
                   )}
 
-                  {/* Show message if teacher hasn't applied yet */}
+                  {/* Show message based on application status */}
                   {!applicationStatus && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <p className="text-blue-700 text-sm">
                         Apply to this post to view student contact information
+                      </p>
+                    </div>
+                  )}
+
+                  {applicationStatus === "pending" && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="text-yellow-700 text-sm">
+                        Your application is being processed. Contact information
+                        will be available soon.
                       </p>
                     </div>
                   )}

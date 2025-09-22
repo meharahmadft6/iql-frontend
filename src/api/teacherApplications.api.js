@@ -11,3 +11,5 @@ export const getContactInformation = (applicationId) =>
 // ✅ Check application status (needs postId)
 export const checkApplicationStatusFromApi = (postId) =>
   API.get(`/applications/check/${postId}`);
+export const getTeacherApplications = (teacherId) =>
+  API.get(`/applications/teacher/${teacherId}`);
