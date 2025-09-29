@@ -8,7 +8,8 @@ import {
 import Swal from "sweetalert2";
 import StudentDashboardLayout from "../../../layout/student/DashboardLayout";
 import { useRouter } from "next/navigation";
-
+import { getSubjects } from "../../../../api/subject.api"; // Adjust path as needed
+import { FiSearch, FiX } from "react-icons/fi";
 const RequestTeacherPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [postId, setPostId] = useState(null);
@@ -25,7 +26,12 @@ const RequestTeacherPage = () => {
   const [languages, setLanguages] = useState([]);
   const [errors, setErrors] = useState({});
   const router = useRouter();
-
+  // Add these state variables with your existing useState declarations
+  const [subjects, setSubjects] = useState([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [subjectSuggestions, setSubjectSuggestions] = useState([]);
+  const [showSubjectSuggestions, setShowSubjectSuggestions] = useState(false);
+  const subjectInputRef = useRef(null);
   const [formData, setFormData] = useState({
     location: "",
     phone: {
@@ -139,6 +145,79 @@ const RequestTeacherPage = () => {
       });
     }
   }, [router]);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      setIsLoadingSubjects(true);
+      try {
+        const response = await getSubjects();
+        console.log("subjects", response.data.data);
+        if (response.data.success) {
+          setSubjects(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      } finally {
+        setIsLoadingSubjects(false);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
+
+  // Add this useEffect for subject suggestions
+  // Filter subjects based on input across name, category, and level
+  useEffect(() => {
+    const currentSubject = formData.subjects[formData.subjects.length - 1];
+    if (currentSubject && currentSubject.name.length > 1) {
+      const searchTerm = currentSubject.name.toLowerCase();
+      const filtered = subjects.filter(
+        (subj) =>
+          subj.name.toLowerCase().includes(searchTerm) ||
+          subj.category.toLowerCase().includes(searchTerm) ||
+          subj.level.toLowerCase().includes(searchTerm)
+      );
+      setSubjectSuggestions(filtered);
+    } else {
+      setSubjectSuggestions([]);
+    }
+  }, [formData.subjects, subjects]);
+
+  // Add these helper functions
+  const handleSubjectInputChange = (index, value) => {
+    handleArrayChange(index, "name", value, "subjects");
+    setShowSubjectSuggestions(true);
+  };
+
+  const handleSubjectSelect = (index, subject) => {
+    setFormData((prev) => ({
+      ...prev,
+      subjects: prev.subjects.map((subj, i) =>
+        i === index
+          ? {
+              ...subj,
+              name: subject.name,
+              level: subject.level, // This will automatically set the level from the selected subject
+            }
+          : subj
+      ),
+    }));
+    setShowSubjectSuggestions(false);
+    setSubjectSuggestions([]); // Clear suggestions after selection
+  };
+
+  // Update the clearSubject function to also clear the level:
+  const clearSubject = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      subjects: prev.subjects.map((subj, i) =>
+        i === index
+          ? { ...subj, name: "", level: "" } // Clear both name and level
+          : subj
+      ),
+    }));
+    setSubjectSuggestions([]);
+  };
 
   // Fetch post data for editing
   const fetchPostData = async (id) => {
@@ -397,6 +476,7 @@ const RequestTeacherPage = () => {
     if (formData.meetingOptions.length === 0)
       newErrors.meetingOptions = "At least one meeting option is required";
 
+    // In your validateForm function, update the subjects validation:
     if (formData.subjects.some((s) => !s.name.trim() || !s.level)) {
       newErrors.subjects = "All subjects must have name and level";
     }
@@ -876,54 +956,118 @@ const RequestTeacherPage = () => {
                   Subjects *
                 </label>
                 {formData.subjects.map((subject, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 mb-2"
-                  >
-                    <input
-                      type="text"
-                      placeholder="Subject name (e.g., Mathematics)"
-                      value={subject.name}
-                      onChange={(e) =>
-                        handleArrayChange(
-                          index,
-                          "name",
-                          e.target.value,
-                          "subjects"
-                        )
-                      }
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <select
-                      value={subject.level}
-                      onChange={(e) =>
-                        handleArrayChange(
-                          index,
-                          "level",
-                          e.target.value,
-                          "subjects"
-                        )
-                      }
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:min-w-32"
-                    >
-                      <option value="">Select level</option>
-                      {levelOptions.map((level) => (
-                        <option key={level} value={level}>
-                          {level}
-                        </option>
-                      ))}
-                    </select>
-                    {formData.subjects.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeArrayItem(index, "subjects")}
-                        className="px-3 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 sm:w-auto w-full"
+                  <div key={index} className="relative mb-2">
+                    <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                      {/* Subject Name Input with Search */}
+                      <div className="flex-1 relative">
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <FiSearch className="h-5 w-5 text-gray-500" />
+                          </div>
+                          <input
+                            ref={
+                              index === formData.subjects.length - 1
+                                ? subjectInputRef
+                                : null
+                            }
+                            type="text"
+                            placeholder="Subject name (e.g., Mathematics)"
+                            value={subject.name}
+                            onChange={(e) =>
+                              handleSubjectInputChange(index, e.target.value)
+                            }
+                            onFocus={() => setShowSubjectSuggestions(true)}
+                            onBlur={() =>
+                              setTimeout(
+                                () => setShowSubjectSuggestions(false),
+                                200
+                              )
+                            }
+                            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                          {subject.name && (
+                            <button
+                              type="button"
+                              onClick={() => clearSubject(index)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                            >
+                              <FiX className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {/* Level Select */}
+                      <select
+                        value={subject.level}
+                        onChange={(e) =>
+                          handleArrayChange(
+                            index,
+                            "level",
+                            e.target.value,
+                            "subjects"
+                          )
+                        }
+                        className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:min-w-32 ${
+                          subject.name &&
+                          subjects.find((s) => s.name === subject.name)
+                            ? "bg-gray-100 text-gray-600"
+                            : "border-gray-300"
+                        }`}
+                        disabled={
+                          subject.name &&
+                          subjects.find((s) => s.name === subject.name)
+                            ? true
+                            : false
+                        }
                       >
-                        Remove
-                      </button>
-                    )}
+                        <option value="">Select level</option>
+                        {levelOptions.map((level) => (
+                          <option key={level} value={level}>
+                            {level}
+                          </option>
+                        ))}
+                      </select>
+
+                      {formData.subjects.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeArrayItem(index, "subjects")}
+                          className="px-3 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 sm:w-auto w-full"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Subject Suggestions Dropdown */}
+                    {showSubjectSuggestions &&
+                      index === formData.subjects.length - 1 &&
+                      subjectSuggestions.length > 0 && (
+                        <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                          {subjectSuggestions.map((suggestion) => (
+                            <li
+                              key={suggestion._id}
+                              className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-gray-800 border-b border-gray-100 last:border-b-0"
+                              onClick={() =>
+                                handleSubjectSelect(index, suggestion)
+                              }
+                            >
+                              <div className="font-medium">
+                                {suggestion.name}
+                              </div>
+                              <div className="text-sm text-gray-600 flex justify-between mt-1">
+                                <span>{suggestion.category}</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                  {suggestion.level}
+                                </span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                   </div>
                 ))}
+
                 <button
                   type="button"
                   onClick={() =>
@@ -1159,7 +1303,7 @@ const RequestTeacherPage = () => {
   }
 
   return (
-    <StudentDashboardLayout>
+    <StudentDashboardLayout title="Add Post Requirement">
       <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">{renderLocationInput()}</div>
       </div>

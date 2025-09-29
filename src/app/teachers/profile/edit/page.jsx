@@ -8,6 +8,8 @@ import {
   updateTeacherProfile,
 } from "../../../../api/teacher.api";
 import DashboardLayout from "../../../layout/teacher/DashboardLayout";
+import { getSubjects } from "../../../../api/subject.api";
+import { FiSearch, FiX } from "react-icons/fi";
 
 const EditTeacherProfile = () => {
   const router = useRouter();
@@ -18,6 +20,11 @@ const EditTeacherProfile = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [teacher, setTeacher] = useState(null);
+  const [subjects, setSubjects] = useState([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [subjectSuggestions, setSubjectSuggestions] = useState([]);
+  const [showSubjectSuggestions, setShowSubjectSuggestions] = useState(false);
+  const [activeSubjectIndex, setActiveSubjectIndex] = useState(null);
 
   const GEOAPIFY_KEY = "216ee53519b343a5be36cba1a2fa6ed6";
   // Form state
@@ -148,6 +155,92 @@ const EditTeacherProfile = () => {
 
     checkAuthAndFetchProfile();
   }, [router]);
+
+  // Add this useEffect to fetch subjects
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      setIsLoadingSubjects(true);
+      try {
+        const response = await getSubjects();
+        if (response.data.success) {
+          setSubjects(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      } finally {
+        setIsLoadingSubjects(false);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
+
+  // Add this useEffect for subject suggestions filtering
+  useEffect(() => {
+    if (activeSubjectIndex !== null && formData.subjects[activeSubjectIndex]) {
+      const currentSubject = formData.subjects[activeSubjectIndex];
+      if (currentSubject.name && currentSubject.name.length > 1) {
+        const searchTerm = currentSubject.name.toLowerCase();
+        const filtered = subjects.filter(
+          (subj) =>
+            subj.name.toLowerCase().includes(searchTerm) ||
+            subj.category.toLowerCase().includes(searchTerm) ||
+            subj.level.toLowerCase().includes(searchTerm)
+        );
+        setSubjectSuggestions(filtered);
+      } else {
+        setSubjectSuggestions([]);
+      }
+    }
+  }, [formData.subjects, subjects, activeSubjectIndex]);
+
+  // Add these helper functions
+  const handleSubjectInputChange = (index, value) => {
+    const updatedArray = [...formData.subjects];
+    updatedArray[index] = {
+      ...updatedArray[index],
+      name: value,
+    };
+    setFormData((prev) => ({
+      ...prev,
+      subjects: updatedArray,
+    }));
+    setActiveSubjectIndex(index);
+    setShowSubjectSuggestions(true);
+  };
+
+  const handleSubjectSelect = (index, subject) => {
+    const updatedArray = [...formData.subjects];
+    updatedArray[index] = {
+      ...updatedArray[index],
+      name: subject.name,
+      fromLevel: subject.level, // Auto-set the level from database
+      toLevel: subject.level, // You can modify this logic as needed
+    };
+    setFormData((prev) => ({
+      ...prev,
+      subjects: updatedArray,
+    }));
+    setShowSubjectSuggestions(false);
+    setSubjectSuggestions([]);
+    setActiveSubjectIndex(null);
+  };
+
+  const clearSubject = (index) => {
+    const updatedArray = [...formData.subjects];
+    updatedArray[index] = {
+      ...updatedArray[index],
+      name: "",
+      fromLevel: "",
+      toLevel: "",
+    };
+    setFormData((prev) => ({
+      ...prev,
+      subjects: updatedArray,
+    }));
+    setSubjectSuggestions([]);
+    setActiveSubjectIndex(null);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -534,18 +627,73 @@ const EditTeacherProfile = () => {
                       </button>
                     )}
                   </div>
-                  <div>
+
+                  {/* Subject Name Input with Search and Suggestions */}
+                  <div className="relative">
                     <label className="block mb-1">Subject Name*</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={subject.name}
-                      onChange={(e) => handleArrayChange("subjects", index, e)}
-                      className="w-full p-2 border rounded"
-                      placeholder="e.g. Mathematics, Physics, etc."
-                      required
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FiSearch className="h-5 w-5 text-gray-500" />
+                      </div>
+                      <input
+                        type="text"
+                        value={subject.name}
+                        onChange={(e) =>
+                          handleSubjectInputChange(index, e.target.value)
+                        }
+                        onFocus={() => {
+                          setActiveSubjectIndex(index);
+                          setShowSubjectSuggestions(true);
+                        }}
+                        onBlur={() =>
+                          setTimeout(
+                            () => setShowSubjectSuggestions(false),
+                            200
+                          )
+                        }
+                        className="w-full pl-10 pr-10 p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="e.g. Mathematics, Physics, etc."
+                        required
+                      />
+                      {subject.name && (
+                        <button
+                          type="button"
+                          onClick={() => clearSubject(index)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        >
+                          <FiX className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Subject Suggestions Dropdown */}
+                    {showSubjectSuggestions &&
+                      activeSubjectIndex === index &&
+                      subjectSuggestions.length > 0 && (
+                        <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                          {subjectSuggestions.map((suggestion) => (
+                            <li
+                              key={suggestion._id}
+                              className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-gray-800 border-b border-gray-100 last:border-b-0"
+                              onClick={() =>
+                                handleSubjectSelect(index, suggestion)
+                              }
+                            >
+                              <div className="font-medium">
+                                {suggestion.name}
+                              </div>
+                              <div className="text-sm text-gray-600 flex justify-between mt-1">
+                                <span>{suggestion.category}</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                  {suggestion.level}
+                                </span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                   </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block mb-1">From Level*</label>
@@ -556,10 +704,25 @@ const EditTeacherProfile = () => {
                         onChange={(e) =>
                           handleArrayChange("subjects", index, e)
                         }
-                        className="w-full p-2 border rounded"
+                        className={`w-full p-2 border rounded ${
+                          subject.name &&
+                          subjects.find((s) => s.name === subject.name)
+                            ? "bg-gray-100 text-gray-600"
+                            : ""
+                        }`}
                         placeholder="e.g. Grade 5, Beginner, etc."
+                        readOnly={
+                          subject.name &&
+                          subjects.find((s) => s.name === subject.name)
+                        }
                         required
                       />
+                      {subject.name &&
+                        subjects.find((s) => s.name === subject.name) && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            Level auto-selected from database
+                          </div>
+                        )}
                     </div>
                     <div>
                       <label className="block mb-1">To Level*</label>
@@ -570,8 +733,17 @@ const EditTeacherProfile = () => {
                         onChange={(e) =>
                           handleArrayChange("subjects", index, e)
                         }
-                        className="w-full p-2 border rounded"
+                        className={`w-full p-2 border rounded ${
+                          subject.name &&
+                          subjects.find((s) => s.name === subject.name)
+                            ? "bg-gray-100 text-gray-600"
+                            : ""
+                        }`}
                         placeholder="e.g. Grade 12, Advanced, etc."
+                        readOnly={
+                          subject.name &&
+                          subjects.find((s) => s.name === subject.name)
+                        }
                         required
                       />
                     </div>
@@ -592,7 +764,6 @@ const EditTeacherProfile = () => {
                 + Add Another Subject
               </button>
             </div>
-
             {/* Education Section */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4 border-b pb-2">
