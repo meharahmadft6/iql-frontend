@@ -198,7 +198,7 @@ const TeachersPage = () => {
                           passHref
                         >
                           <h3 className="text-3xl font-semibold text-blue-800 truncate hover:underline cursor-pointer">
-                            {teacher.user.name}
+                            {teacher.user.name || "Professional Tutor"}
                           </h3>
                         </Link>
                         <p className="text-indigo-600 font-medium text-xs sm:text-sm mt-3">

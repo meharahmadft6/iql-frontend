@@ -1299,136 +1299,219 @@ const RequestTeacherPage = () => {
       </div>
     </div>
   );
-  
-  const renderStep5 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Additional Details
-        </h2>
-        <p className="text-gray-600">Final details about your requirements</p>
-      </div>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description *
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            rows={4}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.description ? "border-red-500" : "border-gray-300"
-            }`}
-            placeholder="Describe your learning needs, goals, preferred teaching style, and any specific requirements..."
-            maxLength={500}
-          />
-          {errors.description && (
-            <p className="text-red-500 text-sm mt-1">{errors.description}</p>
-          )}
-          <div className="text-sm text-gray-500 mt-1">
-            {formData.description.length}/500 characters
+  const renderStep5 = () => {
+    // Function to validate description for contact information
+    const validateDescription = (text) => {
+      const contactPatterns = {
+        email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+        phone: /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g,
+        url: /https?:\/\/[^\s]+|www\.[^\s]+/gi,
+        socialMedia:
+          /(facebook\.com|twitter\.com|instagram\.com|linkedin\.com|tiktok\.com|snapchat\.com)[^\s]*/gi,
+      };
+
+      const errors = [];
+
+      for (const [type, pattern] of Object.entries(contactPatterns)) {
+        const matches = text.match(pattern);
+        if (matches && matches.length > 0) {
+          errors.push(`${type} information detected`);
+        }
+      }
+
+      return errors;
+    };
+
+    const handleDescriptionChange = (e) => {
+      const { value } = e.target;
+
+      // Check for contact information
+      const contactErrors = validateDescription(value);
+
+      if (contactErrors.length > 0) {
+        setErrors((prev) => ({
+          ...prev,
+          description: `Please remove contact information: ${contactErrors.join(
+            ", "
+          )}`,
+        }));
+      } else {
+        // Clear description error if it was a contact info error
+        if (
+          errors.description &&
+          errors.description.includes("contact information")
+        ) {
+          setErrors((prev) => ({ ...prev, description: undefined }));
+        }
+      }
+
+      // Update the form data
+      handleInputChange(e);
+    };
+
+    const handleDescriptionBlur = (e) => {
+      const { value } = e.target;
+      const contactErrors = validateDescription(value);
+
+      if (contactErrors.length > 0 && !errors.description) {
+        setErrors((prev) => ({
+          ...prev,
+          description: `Please remove contact information: ${contactErrors.join(
+            ", "
+          )}`,
+        }));
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Additional Details
+          </h2>
+          <p className="text-gray-600">Final details about your requirements</p>
+          <div className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">
+            ⚠️ Please do not include any contact information (email, phone
+            numbers, links, social media) in the description
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Preferred Languages *
-          </label>
-          {formData.languages.map((language, index) => (
-            <div
-              key={index}
-              className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 mb-2"
-            >
-              <select
-                value={language}
-                onChange={(e) =>
-                  handleArrayChange(index, "", e.target.value, "languages")
-                }
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Select language</option>
-                {languages.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {lang}
-                  </option>
-                ))}
-              </select>
-              {formData.languages.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeArrayItem(index, "languages")}
-                  className="px-3 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 sm:w-auto w-full"
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description *
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleDescriptionChange}
+              onBlur={handleDescriptionBlur}
+              rows={4}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                errors.description ? "border-red-500" : "border-gray-300"
+              }`}
+              placeholder="Describe your learning needs, goals, preferred teaching style, and any specific requirements. Please do not include contact information like email, phone numbers, or website links."
+              maxLength={500}
+            />
+            {errors.description && (
+              <p className="text-red-500 text-sm mt-1 flex items-start">
+                <svg
+                  className="w-4 h-4 mr-1 mt-0.5 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
                 >
-                  Remove
-                </button>
-              )}
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {errors.description}
+              </p>
+            )}
+            <div className="text-sm text-gray-500 mt-1">
+              {formData.description.length}/500 characters
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => addArrayItem("languages", "")}
-            className="mt-2 px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 w-full sm:w-auto"
-          >
-            + Add Language
-          </button>
-          {errors.languages && (
-            <p className="text-red-500 text-sm mt-1">{errors.languages}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Profile Image (Optional)
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <div className="text-sm text-gray-500 mt-1">
-            Upload a profile picture to help tutors recognize you
           </div>
-        </div>
 
-        {/* Form Summary */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-medium text-gray-900 mb-3">
-            Review Your Request
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="font-medium">Service:</span>{" "}
-              {formData.serviceType}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Preferred Languages *
+            </label>
+            {formData.languages.map((language, index) => (
+              <div
+                key={index}
+                className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 mb-2"
+              >
+                <select
+                  value={language}
+                  onChange={(e) =>
+                    handleArrayChange(index, "", e.target.value, "languages")
+                  }
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select language</option>
+                  {languages.map((lang) => (
+                    <option key={lang} value={lang}>
+                      {lang}
+                    </option>
+                  ))}
+                </select>
+                {formData.languages.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeArrayItem(index, "languages")}
+                    className="px-3 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 sm:w-auto w-full"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => addArrayItem("languages", "")}
+              className="mt-2 px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 w-full sm:w-auto"
+            >
+              + Add Language
+            </button>
+            {errors.languages && (
+              <p className="text-red-500 text-sm mt-1">{errors.languages}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Profile Image (Optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <div className="text-sm text-gray-500 mt-1">
+              Upload a profile picture to help tutors recognize you
             </div>
-            <div>
-              <span className="font-medium">Employment:</span>{" "}
-              {formData.employmentType}
-            </div>
-            <div>
-              <span className="font-medium">Budget:</span>{" "}
-              {formData.budget.currency} {formData.budget.amount}{" "}
-              {formData.budget.frequency}
-            </div>
-            <div>
-              <span className="font-medium">Meeting:</span>{" "}
-              {formData.meetingOptions.join(", ")}
-            </div>
-            <div className="md:col-span-2">
-              <span className="font-medium">Subjects:</span>{" "}
-              {formData.subjects
-                .filter((s) => s.name)
-                .map((s) => `${s.name} (${s.level})`)
-                .join(", ")}
+          </div>
+
+          {/* Form Summary */}
+          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium text-gray-900 mb-3">
+              Review Your Request
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Service:</span>{" "}
+                {formData.serviceType}
+              </div>
+              <div>
+                <span className="font-medium">Employment:</span>{" "}
+                {formData.employmentType}
+              </div>
+              <div>
+                <span className="font-medium">Budget:</span>{" "}
+                {formData.budget.currency} {formData.budget.amount}{" "}
+                {formData.budget.frequency}
+              </div>
+              <div>
+                <span className="font-medium">Meeting:</span>{" "}
+                {formData.meetingOptions.join(", ")}
+              </div>
+              <div className="md:col-span-2">
+                <span className="font-medium">Subjects:</span>{" "}
+                {formData.subjects
+                  .filter((s) => s.name)
+                  .map((s) => `${s.name} (${s.level})`)
+                  .join(", ")}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const totalSteps = isLoggedIn ? 5 : 5;
   if (accessDenied) {

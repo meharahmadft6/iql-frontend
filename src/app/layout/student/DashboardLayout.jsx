@@ -15,6 +15,7 @@ import {
   ChevronDownIcon,
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
+import { BookOpen } from "lucide-react";
 import * as userApi from "../../../api/user.api";
 
 const DashboardLayout = ({ children, title = "Dashboard" }) => {
@@ -109,26 +110,29 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
     <div className="flex h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <div
-        className={`fixed inset-0 z-40 md:hidden ${
-          sidebarOpen ? "block" : "hidden"
+        className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
+        {/* Background Blur Layer */}
         <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-75"
+          className="absolute inset-0 backdrop-blur-md bg-white/30"
           onClick={() => setSidebarOpen(false)}
         ></div>
-        <div className="relative flex flex-col w-72 max-w-xs bg-white h-full">
-          <div className="flex items-center justify-between px-4 py-5 border-b border-gray-200">
+
+        {/* Sidebar Panel */}
+        <div className="relative flex flex-col w-72 max-w-xs bg-white/80 backdrop-blur-xl h-full shadow-2xl border-r border-white/40">
+          <div className="flex items-center justify-between px-4 py-5 border-b border-gray-200/50">
             <div className="text-lg font-medium text-gray-900">Dashboard</div>
             <button
               type="button"
               className="text-gray-500 hover:text-gray-600"
               onClick={() => setSidebarOpen(false)}
             >
-              <span className="sr-only">Close sidebar</span>
               <XCircleIcon className="h-6 w-6" />
             </button>
           </div>
+
           <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
             <NavItem
               href="/students/dashboard"
@@ -142,6 +146,13 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
               icon={<UserCircleIcon className="h-5 w-5" />}
               text="Profile"
               active={pathname === "/students/profile"} // Changed to use pathname
+              mobile
+            />
+            <NavItem
+              href="/students/study"
+              icon={<BookOpen className="h-5 w-5" />}
+              text="Start Studying"
+              active={pathname === "/students/study"}
               mobile
             />
             {userData?.isVerified && (
@@ -205,6 +216,13 @@ const DashboardLayout = ({ children, title = "Dashboard" }) => {
                 icon={<UserCircleIcon className="h-6 w-6" />}
                 text="Profile"
                 active={pathname === "/students/profile"} // Changed to use pathname
+              />
+              <NavItem
+                href="/students/study"
+                icon={<BookOpen className="h-5 w-5" />}
+                text="Start Studing"
+                active={pathname === "/students/study"} // Changed to use pathname
+                mobile
               />
               {userData?.isVerified && (
                 <>

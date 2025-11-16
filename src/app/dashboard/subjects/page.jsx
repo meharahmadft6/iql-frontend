@@ -90,6 +90,7 @@ const SubjectsPage = () => {
     "Primary",
     "Secondary",
     "IGCSE",
+    "GCSE",
     "igcse",
     "O-Level",
     "AS-Level",

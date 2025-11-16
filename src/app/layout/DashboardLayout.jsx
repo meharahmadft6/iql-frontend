@@ -8,15 +8,13 @@ import {
   Users,
   BookOpen,
   GraduationCap,
-  BarChart3,
-  Settings,
-  Bell,
   LogOut,
   ChevronUp,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
+import { getCurrentUser } from "../../api/user.api"; // Adjust path as needed
 
 // Sidebar Context
 const SidebarContext = createContext(null);
@@ -51,90 +49,8 @@ function useIsMobile() {
 function Notification() {
   const [isOpen, setIsOpen] = useState(false);
   const [isDotVisible, setIsDotVisible] = useState(true);
-  const isMobile = useIsMobile();
 
-  const notificationList = [
-    {
-      image: "/images/user/user-15.png",
-      title: "Piter Joined the Team!",
-      subTitle: "Congratulate him",
-    },
-    {
-      image: "/images/user/user-03.png",
-      title: "New message",
-      subTitle: "Devid sent a new message",
-    },
-    {
-      image: "/images/user/user-26.png",
-      title: "New Payment received",
-      subTitle: "Check your earnings",
-    },
-  ];
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => {
-          setIsOpen(!isOpen);
-          if (setIsDotVisible) setIsDotVisible(false);
-        }}
-        className="grid size-12 place-items-center rounded-full border bg-gray-100 text-gray-800 outline-none hover:text-primary focus-visible:border-primary focus-visible:text-primary"
-        aria-label="View Notifications"
-      >
-        <span className="relative">
-          <Bell size={20} />
-          {isDotVisible && (
-            <span className="absolute -top-1 -right-1 z-10 size-2 rounded-full bg-red-500 ring-2 ring-gray-100">
-              <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-red-500 opacity-75" />
-            </span>
-          )}
-        </span>
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 border border-gray-200 bg-white px-4 py-3 shadow-lg rounded-lg z-50">
-          <div className="mb-1 flex items-center justify-between px-2 py-2">
-            <span className="text-lg font-medium text-gray-800">
-              Notifications
-            </span>
-            <span className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white">
-              3 new
-            </span>
-          </div>
-
-          <ul className="mb-3 max-h-80 space-y-2 overflow-y-auto">
-            {notificationList.map((item, index) => (
-              <li key={index}>
-                <Link
-                  href="#"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-4 rounded-lg px-2 py-2 outline-none hover:bg-gray-100 focus-visible:bg-gray-100"
-                >
-                  <div className="size-12 rounded-full bg-gray-200" />
-                  <div>
-                    <strong className="block text-sm font-medium text-gray-800">
-                      {item.title}
-                    </strong>
-                    <span className="truncate text-sm font-medium text-gray-600">
-                      {item.subTitle}
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-
-          <Link
-            href="#"
-            onClick={() => setIsOpen(false)}
-            className="block rounded-lg border border-blue-600 p-2 text-center text-sm font-medium text-blue-600 outline-none transition-colors hover:bg-blue-50 focus:bg-blue-50"
-          >
-            See all notifications
-          </Link>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="relative"></div>;
 }
 
 // User Info Component
@@ -187,26 +103,6 @@ function UserInfo({ user, onLogout }) {
 
           <hr className="border-gray-200" />
 
-          <div className="p-2 text-base text-gray-700">
-            <Link
-              href="/profile"
-              onClick={() => setIsOpen(false)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-100 hover:text-gray-800"
-            >
-              <Users size={16} />
-              <span className="text-base font-medium">View profile</span>
-            </Link>
-
-            <Link
-              href="/settings"
-              onClick={() => setIsOpen(false)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-100 hover:text-gray-800"
-            >
-              <Settings size={16} />
-              <span className="text-base font-medium">Account Settings</span>
-            </Link>
-          </div>
-
           <hr className="border-gray-200" />
 
           <div className="p-2 text-base text-gray-700">
@@ -229,7 +125,7 @@ function UserInfo({ user, onLogout }) {
 
 // Header Component
 function Header({ user, onLogout }) {
-  const { toggleSidebar, isMobile } = useSidebarContext();
+  const { toggleSidebar } = useSidebarContext();
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-5 shadow-sm md:px-5 2xl:px-10">
@@ -266,20 +162,17 @@ function Sidebar({ user }) {
     { icon: Users, label: "Teachers", href: "/dashboard/teachers" },
     { icon: GraduationCap, label: "Students", href: "/dashboard/students" },
     { icon: BookOpen, label: "Courses", href: "/dashboard/courses" },
+    {
+      icon: BookOpen,
+      label: "Enrollment Requests",
+      href: "/dashboard/course-requests",
+    },
     { icon: BookOpen, label: "Subjects", href: "/dashboard/subjects" },
-    { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
-    { icon: Settings, label: "Settings", href: "/dashboard/settings" },
   ];
 
-  // Function to check if a link is active (exact match only)
   const isActiveLink = (href) => {
     return pathname === href;
   };
-  const toggleExpanded = (title) => {
-    setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
-  };
-
-  // Function to check if a link is active
 
   return (
     <>
@@ -333,10 +226,6 @@ function Sidebar({ user }) {
           {/* Navigation */}
           <div className="mt-6 flex-1 overflow-y-auto pr-3 min-[850px]:mt-10">
             <div className="mb-6">
-              <h2 className="mb-5 text-sm font-medium text-gray-500">
-                MAIN MENU
-              </h2>
-
               <nav role="navigation" aria-label="Main Menu">
                 <ul className="space-y-2">
                   {sidebarItems.map((item, index) => {
@@ -388,11 +277,105 @@ function Sidebar({ user }) {
   );
 }
 
-// Main Layout Component
-export default function DashboardLayout({ children, user }) {
+// Loading Component
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Verifying authentication...</p>
+      </div>
+    </div>
+  );
+}
+
+// Unauthorized Component
+function UnauthorizedScreen() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center max-w-md p-8">
+        <div className="text-red-600 text-6xl mb-4">🚫</div>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h1>
+        <p className="text-gray-600 mb-6">
+          You don't have permission to access this page. This area is restricted
+          to administrators only.
+        </p>
+        <Link
+          href="/"
+          className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Return to Login
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// Main Layout Component with Authentication
+export default function DashboardLayout({ children }) {
   const [isOpen, setIsOpen] = useState(true);
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const isMobile = useIsMobile();
   const router = useRouter();
+
+  // Verify authentication on mount and route changes
+  useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        setIsLoading(true);
+
+        // Check if token exists
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.log("No token found, redirecting to login");
+          router.push("/");
+          return;
+        }
+
+        // Fetch current user from server
+        const response = await getCurrentUser();
+        // API returns { success, data: { user info }, walletBalance }
+        const userData = response.data.data;
+
+        console.log("Verified user:", userData);
+
+        // CRITICAL: Check if user role is admin from SERVER response
+        if (userData.role !== "admin") {
+          console.log("User is not admin, access denied");
+          setIsAuthorized(false);
+          setIsLoading(false);
+
+          // Clear invalid data
+          localStorage.removeItem("token");
+          localStorage.removeItem("userData");
+          return;
+        }
+
+        // User is verified admin
+        setUser(userData);
+        setIsAuthorized(true);
+
+        // Update localStorage with verified data (optional)
+        localStorage.setItem("userData", JSON.stringify(userData));
+      } catch (error) {
+        console.error("Authentication error:", error);
+        setIsAuthorized(false);
+
+        // Clear tokens on auth failure
+        localStorage.removeItem("token");
+        localStorage.removeItem("userData");
+
+        // Redirect to login
+        router.push("/");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    verifyAuth();
+  }, [router]);
 
   useEffect(() => {
     if (isMobile) {
@@ -406,15 +389,26 @@ export default function DashboardLayout({ children, user }) {
     setIsOpen((prev) => !prev);
   }
 
-  // Handle logout directly in this component
   const handleLogout = () => {
-    // Remove token from localStorage
+    // Clear all auth data
     localStorage.removeItem("token");
     localStorage.removeItem("userData");
-    // Redirect to login page
+
+    // Redirect to login
     router.push("/");
   };
 
+  // Show loading screen while verifying
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  // Show unauthorized screen if not admin
+  if (!isAuthorized) {
+    return <UnauthorizedScreen />;
+  }
+
+  // User is verified admin, show dashboard
   return (
     <SidebarContext.Provider
       value={{
